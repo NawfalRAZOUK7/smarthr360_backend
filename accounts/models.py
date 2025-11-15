@@ -49,7 +49,10 @@ class User(AbstractUser):
         ADMIN = "ADMIN", "Admin"
 
     # we remove username and use email instead
+    # ❗ Remove username, use email instead
     username = None
+
+    # ❗ MUST be unique because USERNAME_FIELD = "email"
     email = models.EmailField(unique=True)
 
     role = models.CharField(
@@ -57,6 +60,38 @@ class User(AbstractUser):
         choices=Role.choices,
         default=Role.EMPLOYEE,
     )
+
+    # ⬇️ add these helper methods/properties
+
+    ROLE_HIERARCHY = {
+        Role.EMPLOYEE: 1,
+        Role.MANAGER: 2,
+        Role.HR: 3,
+        Role.ADMIN: 4,
+    }
+
+    @property
+    def role_rank(self) -> int:
+        """
+        Returns a numeric rank for comparison.
+        Higher = more privileges.
+        """
+        return self.ROLE_HIERARCHY.get(self.role, 0)
+
+    def has_role(self, *roles) -> bool:
+        """
+        Check if user has one of the given roles.
+        Example: user.has_role(User.Role.HR, User.Role.ADMIN)
+        """
+        return self.role in roles
+
+    def is_at_least(self, role: str) -> bool:
+        """
+        Check if user's rank >= given role rank.
+        Example: user.is_at_least(User.Role.MANAGER)
+        """
+        required_rank = self.ROLE_HIERARCHY.get(role, 0)
+        return self.role_rank >= required_rank
 
     # later we can add more fields (department, company, etc.)
     # department = models.CharField(max_length=100, blank=True)

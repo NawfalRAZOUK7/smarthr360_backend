@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .permissions import IsHRRole  # ⬅️ add this
 
 
 def get_tokens_for_user(user: User):
@@ -78,3 +79,14 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+class UserListView(generics.ListAPIView):
+    """
+    GET /api/auth/users/
+
+    Visible only to HR and ADMIN roles.
+    Used for SmartHR360 to let HR see employees list.
+    """
+    queryset = User.objects.all().order_by("email")
+    serializer_class = UserSerializer
+    permission_classes = [IsHRRole]
