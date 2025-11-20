@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # ⬅️ NEW
 
     # Local apps
     'accounts',
@@ -149,4 +150,5 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),  # Authorization: Bearer <token>
+    "BLACKLIST_AFTER_ROTATION": False,  # we’re using manual logout, not rotation
 }

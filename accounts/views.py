@@ -4,7 +4,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    ChangePasswordSerializer,  # ⬅️ NEW
+    LogoutSerializer,  # ⬅️ NEW
+    )
 from .permissions import IsHRRole  # ⬅️ add this
 
 
@@ -63,6 +69,53 @@ class LoginView(APIView):
                 "user": UserSerializer(user).data,
                 "tokens": tokens,
             },
+            status=status.HTTP_200_OK,
+        )
+
+class ChangePasswordView(APIView):
+    """
+    POST /api/auth/change-password/
+
+    Body:
+    {
+      "old_password": "...",
+      "new_password": "..."
+    }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Mot de passe modifié avec succès."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/
+
+    Blacklists the refresh token so it can't be used again.
+
+    Body:
+    {
+      "refresh": "<refresh_token_here>"
+    }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Déconnexion réussie."},
             status=status.HTTP_200_OK,
         )
 
