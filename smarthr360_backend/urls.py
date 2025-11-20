@@ -23,4 +23,5 @@ urlpatterns = [
 
     # TODO: Auth endpoints (Step 2/3)
     path('api/auth/', include('accounts.urls')),
+    path("api/hr/", include("hr.urls")),  # ⬅️ NEW
 ]
