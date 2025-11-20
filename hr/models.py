@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Department(models.Model):
@@ -64,3 +65,19 @@ class EmployeeProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.job_title or 'Employee'}"
+
+    def clean(self):
+        super().clean()
+
+        # cannot be own manager
+        if self.manager_id and self.manager_id == self.id:
+            raise ValidationError("An employee cannot be their own manager.")
+
+        # manager must have MANAGER / HR / ADMIN role
+        if self.manager and self.manager.user.role not in [
+            self.manager.user.Role.MANAGER,
+            self.manager.user.Role.HR,
+            self.manager.user.Role.ADMIN,
+        ]:
+            raise ValidationError("Selected manager must have Manager, HR, or Admin role.")
+

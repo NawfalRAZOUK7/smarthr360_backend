@@ -46,3 +46,17 @@ class EmployeeProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+class EmployeeSelfUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer used when an EMPLOYEE updates their own profile.
+    Only allows "safe" personal fields.
+    """
+
+    class Meta:
+        model = EmployeeProfile
+        fields = [
+            "phone_number",
+            "date_of_birth",
+        ]
+
