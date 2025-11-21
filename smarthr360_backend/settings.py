@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'hr',  # ⬅️ NEW
+    "reviews",   # ⬅️ NEW
+    "wellbeing",  # ⬅️ NEW
 ]
 
 
