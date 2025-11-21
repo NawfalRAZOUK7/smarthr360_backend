@@ -2,15 +2,19 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from django.utils import timezone
 
 from accounts.permissions import IsHRRole, IsManagerOrAbove, EmployeeProfileAccessPermission
 from accounts.models import User
-from .models import Department, EmployeeProfile
+from .models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
 from .serializers import (
     DepartmentSerializer,
     EmployeeProfileSerializer,
     EmployeeSelfUpdateSerializer,
+    SkillSerializer,
+    EmployeeSkillSerializer,
+    FutureCompetencySerializer,
 )
 
 
@@ -135,3 +139,189 @@ class MyTeamListView(generics.ListAPIView):
 
         # fallback: empty queryset
         return EmployeeProfile.objects.none()
+
+class SkillListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/hr/skills/         → list all skills
+    POST /api/hr/skills/         → create skill (HR / Manager / Admin)
+    """
+    queryset = Skill.objects.filter(is_active=True).order_by("name")
+    serializer_class = SkillSerializer
+
+    def get_permissions(self):
+        # Everyone authenticated can READ; only manager+ can WRITE
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsManagerOrAbove()]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+class SkillDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/hr/skills/<id>/
+    PUT    /api/hr/skills/<id>/   (HR / Manager / Admin)
+    PATCH  /api/hr/skills/<id>/
+    DELETE /api/hr/skills/<id>/
+    """
+    queryset = Skill.objects.all()
+    serializer_class = SkillSerializer
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsManagerOrAbove()]
+
+class EmployeeSkillListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/hr/employee-skills/
+        - HR / Admin: all employee skills
+        - Manager: only team employees
+        - Employee: only self skills
+
+    POST /api/hr/employee-skills/
+        - HR / Manager / Admin: create or update skill rating for an employee
+    """
+    serializer_class = EmployeeSkillSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = EmployeeSkill.objects.select_related(
+            "employee__user", "employee__department", "skill"
+        )
+
+        # HR & Admin → all
+        if user.has_role(user.Role.HR, user.Role.ADMIN):
+            return qs
+
+        # Manager → only team (employees whose manager == my employee_profile)
+        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+            manager_profile = user.employee_profile
+            return qs.filter(employee__manager=manager_profile)
+
+        # Employee → only self
+        if hasattr(user, "employee_profile"):
+            return qs.filter(employee__user=user)
+
+        return qs.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        # Only HR / Manager / Admin can create ratings
+        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
+            raise PermissionDenied("Only HR, Manager or Admin can create skill evaluations.")
+
+        employee_id = self.request.data.get("employee_id")
+        skill_id = self.request.data.get("skill_id")
+
+        if not employee_id or not skill_id:
+            raise ValidationError({"detail": "employee_id and skill_id are required."})
+
+        employee = get_object_or_404(EmployeeProfile, pk=employee_id)
+        skill = get_object_or_404(Skill, pk=skill_id)
+
+        # If manager, ensure this employee is in their team
+        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+            manager_profile = user.employee_profile
+            if employee.manager_id != manager_profile.id:
+                raise PermissionDenied("You can only rate skills of your team members.")
+
+        serializer.save(
+            employee=employee,
+            skill=skill,
+            last_evaluated_by=user,
+            last_evaluated_at=timezone.now(),
+        )
+
+class EmployeeSkillDetailView(generics.RetrieveUpdateAPIView):
+    """
+    GET   /api/hr/employee-skills/<id>/
+          - HR/Admin: any
+          - Manager: only team member skills
+          - Employee: only own skills
+
+    PATCH /api/hr/employee-skills/<id>/
+          - HR/Manager/Admin only
+    """
+    serializer_class = EmployeeSkillSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = EmployeeSkill.objects.select_related(
+            "employee__user", "employee__department", "skill"
+        )
+
+        if user.has_role(user.Role.HR, user.Role.ADMIN):
+            return qs
+
+        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+            manager_profile = user.employee_profile
+            return qs.filter(employee__manager=manager_profile)
+
+        if hasattr(user, "employee_profile"):
+            return qs.filter(employee__user=user)
+
+        return qs.none()
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        # Only HR / Manager / Admin can update
+        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
+            raise PermissionDenied("Only HR, Manager or Admin can update skill evaluations.")
+        serializer.save(
+            last_evaluated_by=user,
+            last_evaluated_at=timezone.now(),
+        )
+
+class FutureCompetencyListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/hr/future-competencies/
+        - all authenticated users can read (to show in dashboards)
+
+    POST /api/hr/future-competencies/
+        - HR / Manager / Admin can define future competency needs
+    """
+    queryset = FutureCompetency.objects.select_related("skill", "department")
+    serializer_class = FutureCompetencySerializer
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsManagerOrAbove()]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        skill_id = self.request.data.get("skill_id")
+        department_id = self.request.data.get("department_id")
+
+        if not skill_id:
+            raise ValidationError({"detail": "skill_id is required."})
+
+        skill = get_object_or_404(Skill, pk=skill_id)
+        department = None
+        if department_id:
+            department = get_object_or_404(Department, pk=department_id)
+
+        serializer.save(
+            skill=skill,
+            department=department,
+            created_by=user,
+        )
+
+class FutureCompetencyDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/hr/future-competencies/<id>/
+    PATCH  /api/hr/future-competencies/<id>/  (HR / Manager / Admin)
+    DELETE /api/hr/future-competencies/<id>/
+    """
+    queryset = FutureCompetency.objects.select_related("skill", "department")
+    serializer_class = FutureCompetencySerializer
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsManagerOrAbove()]

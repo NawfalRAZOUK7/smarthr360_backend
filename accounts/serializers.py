@@ -91,7 +91,8 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Identifiants invalides.")
 
         # Check lock status
-        attempt = user.login_attempt
+        # 🔧 HERE: always ensure a LoginAttempt exists
+        attempt, _ = LoginAttempt.objects.get_or_create(user=user)
 
         # 1) Check lockout
         if attempt.check_lock_status():
