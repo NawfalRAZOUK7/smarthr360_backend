@@ -3,13 +3,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import User
+from .models import User, LoginActivity
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
     LoginSerializer,
     ChangePasswordSerializer,  # ⬅️ NEW
     LogoutSerializer,  # ⬅️ NEW
+    RequestPasswordResetSerializer,
+    PasswordResetSerializer,
+    RequestEmailVerificationSerializer,
+    EmailVerificationSerializer,
     )
 from .permissions import IsHRRole  # ⬅️ add this
 
@@ -114,6 +118,18 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        # Log logout activity
+        ip = request.META.get("REMOTE_ADDR")
+        ua = request.META.get("HTTP_USER_AGENT", "")
+        LoginActivity.objects.create(
+            user=request.user,
+            action=LoginActivity.Action.LOGOUT,
+            success=True,
+            ip_address=ip,
+            user_agent=ua,
+        )
+
         return Response(
             {"detail": "Déconnexion réussie."},
             status=status.HTTP_200_OK,
@@ -143,3 +159,116 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("email")
     serializer_class = UserSerializer
     permission_classes = [IsHRRole]
+
+class RequestPasswordResetView(APIView):
+    """
+    POST /api/auth/password-reset/request/
+
+    Body:
+    {
+      "email": "user@example.com"
+    }
+
+    Sends a reset link via email (console backend in dev).
+    In DEBUG mode, we also return the token in the response for easier testing.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = RequestPasswordResetSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        token_obj = serializer.save()
+
+        data = {
+            "detail": "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé."
+        }
+
+        # In development, expose token for quick testing
+        from django.conf import settings as dj_settings
+
+        if dj_settings.DEBUG:
+            data["debug_token"] = token_obj.token
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class PasswordResetView(APIView):
+    """
+    POST /api/auth/password-reset/confirm/
+
+    Body:
+    {
+      "token": "...",
+      "new_password": "NewPass123!"
+    }
+
+    Uses the token to set a new password.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Mot de passe réinitialisé avec succès."},
+            status=status.HTTP_200_OK,
+        )
+
+class RequestEmailVerificationView(APIView):
+    """
+    POST /api/auth/email/verify/request/
+
+    Body:
+    {
+      "email": "user@example.com"
+    }
+
+    Sends a verification link by email.
+    In DEBUG, we can also send back the token (optional).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = RequestEmailVerificationSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        token_obj = serializer.save()
+
+        data = {
+            "detail": "Un email de vérification a été envoyé si ce compte existe.",
+        }
+
+        from django.conf import settings as dj_settings
+        if dj_settings.DEBUG:
+            data["debug_token"] = token_obj.token
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class EmailVerificationView(APIView):
+    """
+    POST /api/auth/email/verify/confirm/
+
+    Body:
+    {
+      "token": "..."
+    }
+
+    Marks the user as email-verified.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = EmailVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Adresse email vérifiée avec succès."},
+            status=status.HTTP_200_OK,
+        )

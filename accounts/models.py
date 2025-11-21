@@ -1,5 +1,12 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+import uuid
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class UserManager(BaseUserManager):
@@ -101,5 +108,149 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=False)  # ⬅️ NEW
+
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+class PasswordResetToken(models.Model):
+    """
+    Simple password reset token model.
+
+    - A random token linked to a user.
+    - Expires after EXPIRATION_HOURS.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="password_reset_tokens",
+    )
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    EXPIRATION_HOURS = 1
+
+    def __str__(self):
+        return f"Password reset token for {self.user.email} ({self.token})"
+
+    @classmethod
+    def create_for_user(cls, user):
+        return cls.objects.create(
+            user=user,
+            token=uuid.uuid4().hex,
+        )
+
+    def mark_used(self):
+        self.is_used = True
+        self.save(update_fields=["is_used"])
+
+    def is_expired(self):
+        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS) < timezone.now()
+
+class EmailVerificationToken(models.Model):
+    """
+    Token for verifying user email addresses.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="email_verification_tokens",
+    )
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    EXPIRATION_HOURS = 24
+
+    def __str__(self):
+        return f"Email verification token for {self.user.email}"
+
+    @classmethod
+    def create_for_user(cls, user):
+        return cls.objects.create(
+            user=user,
+            token=uuid.uuid4().hex,
+        )
+
+    def mark_used(self):
+        self.is_used = True
+        self.save(update_fields=["is_used"])
+
+    def is_expired(self):
+        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS) < timezone.now()
+
+class LoginAttempt(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="login_attempt",
+    )
+    failed_attempts = models.PositiveIntegerField(default=0)
+    last_failed_at = models.DateTimeField(null=True, blank=True)
+    is_locked = models.BooleanField(default=False)
+    locked_until = models.DateTimeField(null=True, blank=True)
+
+    MAX_ATTEMPTS = 5               # after 5 failed logins → lock account
+    LOCKOUT_MINUTES = 15           # locked for 15 minutes
+
+    def mark_failed(self):
+        from django.utils import timezone
+        now = timezone.now()
+
+        self.failed_attempts += 1
+        self.last_failed_at = now
+
+        if self.failed_attempts >= self.MAX_ATTEMPTS:
+            self.is_locked = True
+            self.locked_until = now + timedelta(minutes=self.LOCKOUT_MINUTES)
+
+        self.save()
+
+    def reset_attempts(self):
+        self.failed_attempts = 0
+        self.is_locked = False
+        self.locked_until = None
+        self.save()
+
+    def check_lock_status(self):
+        from django.utils import timezone
+
+        if not self.is_locked:
+            return False
+
+        # if lock expired → unlock
+        if self.locked_until and self.locked_until <= timezone.now():
+            self.reset_attempts()
+            return False
+
+        return True
+
+@receiver(post_save, sender=User)
+def create_login_attempt(sender, instance, created, **kwargs):
+    if created:
+        LoginAttempt.objects.create(user=instance)
+
+class LoginActivity(models.Model):
+    class Action(models.TextChoices):
+        LOGIN = "LOGIN", "Login"
+        LOGOUT = "LOGOUT", "Logout"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="login_activities",
+    )
+    action = models.CharField(max_length=20, choices=Action.choices)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    success = models.BooleanField(default=True)
+    extra_data = models.JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.action} ({'success' if self.success else 'failed'})"

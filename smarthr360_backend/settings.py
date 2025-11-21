@@ -153,3 +153,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),  # Authorization: Bearer <token>
     "BLACKLIST_AFTER_ROTATION": False,  # we’re using manual logout, not rotation
 }
+
+# Development email backend: prints emails to the console
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "no-reply@smarthr360.local"

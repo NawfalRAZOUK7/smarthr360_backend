@@ -8,6 +8,10 @@ from .views import (
     UserListView,
     ChangePasswordView,  # ⬅️ NEW
     LogoutView,  # ⬅️ NEW
+    RequestPasswordResetView,
+    PasswordResetView,
+    RequestEmailVerificationView,
+    EmailVerificationView,
     )
 
 urlpatterns = [
@@ -21,4 +25,26 @@ urlpatterns = [
 
     path("change-password/", ChangePasswordView.as_view(), name="auth-change-password"),
     path("logout/", LogoutView.as_view(), name="auth-logout"),
+
+    path(
+        "password-reset/request/",
+        RequestPasswordResetView.as_view(),
+        name="auth-password-reset-request",
+    ),
+    path(
+        "password-reset/confirm/",
+        PasswordResetView.as_view(),
+        name="auth-password-reset-confirm",
+    ),
+
+    path(
+        "email/verify/request/",
+        RequestEmailVerificationView.as_view(),
+        name="auth-email-verify-request",
+    ),
+    path(
+        "email/verify/confirm/",
+        EmailVerificationView.as_view(),
+        name="auth-email-verify-confirm",
+    ),
 ]
