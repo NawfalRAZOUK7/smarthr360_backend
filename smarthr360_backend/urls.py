@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path("api/hr/", include("hr.urls")),  # ⬅️ NEW
     path("api/reviews/", include("reviews.urls")),   # ⬅️ NEW
+    path("api/wellbeing/", include("wellbeing.urls")),  # ⬅️ NEW
 ]
