@@ -1,5 +1,3 @@
-# accounts/tests/test_auth_flow.py
-
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -56,7 +54,25 @@ class AuthFlowTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        return response.data["tokens"]["access"], response.data["tokens"]["refresh"]
+
+        # Envelope-aware: {"data": {"user": ..., "tokens": {...}}, "meta": {...}}
+        envelope = response.data
+        data = envelope.get("data", envelope)
+
+        tokens = data.get("tokens") or {}
+        access = tokens.get("access")
+        refresh = tokens.get("refresh")
+
+        self.assertIsNotNone(
+            access,
+            f"No access token in login response: {response.data}",
+        )
+        self.assertIsNotNone(
+            refresh,
+            f"No refresh token in login response: {response.data}",
+        )
+
+        return access, refresh
 
     # ---------- Tests ----------
 
@@ -70,10 +86,16 @@ class AuthFlowTests(APITestCase):
         }
         response = self.client.post(self.register_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("user", response.data)
-        self.assertEqual(response.data["user"]["email"], payload["email"])
-        self.assertEqual(response.data["user"]["role"], "EMPLOYEE")
-        self.assertIn("tokens", response.data)
+
+        # Envelope-aware
+        envelope = response.data
+        data = envelope.get("data", envelope)
+
+        self.assertIn("user", data)
+        user = data["user"]
+        self.assertEqual(user["email"], payload["email"])
+        self.assertEqual(user["role"], "EMPLOYEE")
+        self.assertIn("tokens", data)
 
     def test_login_returns_tokens(self):
         access, refresh = self.login("emp@example.com", "EmpPass123!")
@@ -89,7 +111,10 @@ class AuthFlowTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = self.client.get(self.me_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["email"], "emp@example.com")
+
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        self.assertEqual(data["email"], "emp@example.com")
 
     def test_refresh_token_returns_new_access(self):
         _, refresh = self.login("emp@example.com", "EmpPass123!")
@@ -99,8 +124,22 @@ class AuthFlowTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)
-        self.assertTrue(len(response.data["access"]) > 10)
+
+        envelope = response.data
+        data = envelope.get("data", envelope)
+
+        # Support either {"access": "..."} or {"tokens": {"access": "..."}}
+        tokens = data.get("tokens")
+        if tokens is not None:
+            access = tokens.get("access")
+        else:
+            access = data.get("access")
+
+        self.assertIsNotNone(
+            access,
+            f"No access token in refresh response: {response.data}",
+        )
+        self.assertTrue(isinstance(access, str) and len(access) > 10)
 
     def test_change_password_flow(self):
         # login with old password
@@ -173,4 +212,10 @@ class AuthFlowTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {hr_access}")
         response_hr = self.client.get(self.user_list_url)
         self.assertEqual(response_hr.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(response_hr.data), 2)
+
+        # Envelope + pagination: expect a dict with "results"
+        envelope = response_hr.data
+        data = envelope.get("data", envelope)
+        self.assertIsInstance(data, dict)
+        self.assertIn("results", data)
+        self.assertGreaterEqual(len(data["results"]), 2)

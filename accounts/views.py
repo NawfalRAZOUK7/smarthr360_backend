@@ -1,25 +1,40 @@
+# accounts/views.py (updated with ApiResponseMixin)
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from smarthr360_backend.api_mixins import ApiResponseMixin
 
 from .models import User, LoginActivity
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
     LoginSerializer,
-    ChangePasswordSerializer,  # ⬅️ NEW
-    LogoutSerializer,  # ⬅️ NEW
+    ChangePasswordSerializer,
+    LogoutSerializer,
     RequestPasswordResetSerializer,
     PasswordResetSerializer,
     RequestEmailVerificationSerializer,
     EmailVerificationSerializer,
-    )
-from .permissions import IsHRRole  # ⬅️ add this
+)
+from .permissions import IsHRRole
+from .schemas import (
+    register_schema,
+    login_schema,
+    change_password_schema,
+    logout_schema,
+    me_schema,
+    user_list_schema,
+    request_password_reset_schema,
+    password_reset_schema,
+    request_email_verification_schema,
+    email_verification_schema,
+)
 
 
 def get_tokens_for_user(user: User):
-    """Helper: create refresh + access tokens for a given user."""
     refresh = RefreshToken.for_user(user)
     return {
         "refresh": str(refresh),
@@ -27,16 +42,8 @@ def get_tokens_for_user(user: User):
     }
 
 
-class RegisterView(generics.CreateAPIView):
-    """
-    POST /api/auth/register/
-
-    Creates a new user and returns:
-    {
-      "user": {...},
-      "tokens": {"refresh": "...", "access": "..."}
-    }
-    """
+@register_schema
+class RegisterView(ApiResponseMixin, generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -45,22 +52,15 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         tokens = get_tokens_for_user(user)
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "tokens": tokens,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        payload = {
+            "user": UserSerializer(user).data,
+            "tokens": tokens,
+        }
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
-class LoginView(APIView):
-    """
-    POST /api/auth/login/
-
-    Expects email + password
-    Returns same structure as register.
-    """
+@login_schema
+class LoginView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -68,50 +68,25 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         tokens = get_tokens_for_user(user)
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "tokens": tokens,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response({
+            "user": UserSerializer(user).data,
+            "tokens": tokens,
+        }, status=status.HTTP_200_OK)
 
-class ChangePasswordView(APIView):
-    """
-    POST /api/auth/change-password/
 
-    Body:
-    {
-      "old_password": "...",
-      "new_password": "..."
-    }
-    """
+@change_password_schema
+class ChangePasswordView(ApiResponseMixin, APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={"request": request},
-        )
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {"detail": "Mot de passe modifié avec succès."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": "Mot de passe modifié avec succès."}, status=200)
 
 
-class LogoutView(APIView):
-    """
-    POST /api/auth/logout/
-
-    Blacklists the refresh token so it can't be used again.
-
-    Body:
-    {
-      "refresh": "<refresh_token_here>"
-    }
-    """
+@logout_schema
+class LogoutView(ApiResponseMixin, APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -119,156 +94,85 @@ class LogoutView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Log logout activity
-        ip = request.META.get("REMOTE_ADDR")
-        ua = request.META.get("HTTP_USER_AGENT", "")
         LoginActivity.objects.create(
             user=request.user,
             action=LoginActivity.Action.LOGOUT,
             success=True,
-            ip_address=ip,
-            user_agent=ua,
+            ip_address=request.META.get("REMOTE_ADDR"),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
-        return Response(
-            {"detail": "Déconnexion réussie."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": "Déconnexion réussie."}, status=200)
 
 
-class MeView(generics.RetrieveAPIView):
-    """
-    GET /api/auth/me/
-
-    Returns the current authenticated user.
-    Requires Authorization: Bearer <access_token>
-    """
+@me_schema
+class MeView(ApiResponseMixin, generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
-class UserListView(generics.ListAPIView):
-    """
-    GET /api/auth/users/
 
-    Visible only to HR and ADMIN roles.
-    Used for SmartHR360 to let HR see employees list.
-    """
+@user_list_schema
+class UserListView(ApiResponseMixin, generics.ListAPIView):
     queryset = User.objects.all().order_by("email")
     serializer_class = UserSerializer
     permission_classes = [IsHRRole]
 
-class RequestPasswordResetView(APIView):
-    """
-    POST /api/auth/password-reset/request/
 
-    Body:
-    {
-      "email": "user@example.com"
-    }
-
-    Sends a reset link via email (console backend in dev).
-    In DEBUG mode, we also return the token in the response for easier testing.
-    """
+@request_password_reset_schema
+class RequestPasswordResetView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = RequestPasswordResetSerializer(
-            data=request.data,
-            context={"request": request},
-        )
+        serializer = RequestPasswordResetSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         token_obj = serializer.save()
 
-        data = {
-            "detail": "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé."
-        }
+        data = {"detail": "Si un compte existe, un lien de réinitialisation a été envoyé."}
 
-        # In development, expose token for quick testing
         from django.conf import settings as dj_settings
-
         if dj_settings.DEBUG:
             data["debug_token"] = token_obj.token
 
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data, status=200)
 
 
-class PasswordResetView(APIView):
-    """
-    POST /api/auth/password-reset/confirm/
-
-    Body:
-    {
-      "token": "...",
-      "new_password": "NewPass123!"
-    }
-
-    Uses the token to set a new password.
-    """
+@password_reset_schema
+class PasswordResetView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {"detail": "Mot de passe réinitialisé avec succès."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": "Mot de passe réinitialisé avec succès."}, status=200)
 
-class RequestEmailVerificationView(APIView):
-    """
-    POST /api/auth/email/verify/request/
 
-    Body:
-    {
-      "email": "user@example.com"
-    }
-
-    Sends a verification link by email.
-    In DEBUG, we can also send back the token (optional).
-    """
+@request_email_verification_schema
+class RequestEmailVerificationView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = RequestEmailVerificationSerializer(
-            data=request.data,
-            context={"request": request},
-        )
+        serializer = RequestEmailVerificationSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         token_obj = serializer.save()
 
-        data = {
-            "detail": "Un email de vérification a été envoyé si ce compte existe.",
-        }
-
+        data = {"detail": "Un email de vérification a été envoyé."}
         from django.conf import settings as dj_settings
         if dj_settings.DEBUG:
             data["debug_token"] = token_obj.token
 
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data, status=200)
 
 
-class EmailVerificationView(APIView):
-    """
-    POST /api/auth/email/verify/confirm/
-
-    Body:
-    {
-      "token": "..."
-    }
-
-    Marks the user as email-verified.
-    """
+@email_verification_schema
+class EmailVerificationView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = EmailVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {"detail": "Adresse email vérifiée avec succès."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": "Adresse email vérifiée avec succès."}, status=200)

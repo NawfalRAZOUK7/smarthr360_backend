@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from smarthr360_backend.api_mixins import ApiResponseMixin
 from accounts.models import User
 from hr.models import EmployeeProfile
 from .models import ReviewCycle, PerformanceReview, ReviewItem, Goal
@@ -16,7 +17,8 @@ from .serializers import (
     GoalSerializer,
 )
 
-class ReviewCycleListCreateView(generics.ListCreateAPIView):
+
+class ReviewCycleListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     """
     GET  /api/reviews/cycles/   → list all cycles (any authenticated)
     POST /api/reviews/cycles/   → create cycle (HR or ADMIN)
@@ -31,7 +33,8 @@ class ReviewCycleListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("Only HR or Admin can create review cycles.")
         serializer.save()
 
-class ReviewCycleDetailView(generics.RetrieveUpdateAPIView):
+
+class ReviewCycleDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
     """
     GET   /api/reviews/cycles/<id>/
     PATCH /api/reviews/cycles/<id>/   → HR or ADMIN
@@ -45,6 +48,7 @@ class ReviewCycleDetailView(generics.RetrieveUpdateAPIView):
         if not user.has_role(user.Role.HR, user.Role.ADMIN):
             raise PermissionDenied("Only HR or Admin can update review cycles.")
         serializer.save()
+
 
 def _reviews_queryset_for_user(user):
     qs = PerformanceReview.objects.select_related(
@@ -68,7 +72,8 @@ def _reviews_queryset_for_user(user):
 
     return qs.none()
 
-class PerformanceReviewListCreateView(generics.ListCreateAPIView):
+
+class PerformanceReviewListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     """
     GET  /api/reviews/
         HR/Admin → all
@@ -102,13 +107,16 @@ class PerformanceReviewListCreateView(generics.ListCreateAPIView):
         # Determine manager for this review
         if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
             manager_profile = user.employee_profile
-            # Optionally enforce: employee must be in manager's team
-            if employee.manager_id and employee.manager_id != manager_profile.id:
+
+            # STRICT RULE:
+            # Manager can ONLY review employees that have them as manager.
+            if employee.manager_id != manager_profile.id:
                 raise PermissionDenied("You can only review employees in your team.")
+
             manager = manager_profile
         else:
-            # HR/Admin can optionally set a specific manager via body later
-            manager = employee.manager  # may be None
+            # HR/Admin: default to employee.manager (may be None)
+            manager = employee.manager
 
         review = serializer.save(
             employee=employee,
@@ -118,7 +126,8 @@ class PerformanceReviewListCreateView(generics.ListCreateAPIView):
         # overall_score will be computed later when items are added
         return review
 
-class PerformanceReviewDetailView(generics.RetrieveUpdateAPIView):
+
+class PerformanceReviewDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
     """
     GET   /api/reviews/<id>/
     PATCH /api/reviews/<id>/
@@ -158,7 +167,6 @@ class PerformanceReviewDetailView(generics.RetrieveUpdateAPIView):
             and review.status == PerformanceReview.Status.DRAFT
         ):
             allowed = {"employee_comment"}
-            # restrict validated_data to allowed fields
             for field in list(serializer.validated_data.keys()):
                 if field not in allowed:
                     serializer.validated_data.pop(field)
@@ -167,7 +175,8 @@ class PerformanceReviewDetailView(generics.RetrieveUpdateAPIView):
 
         raise PermissionDenied("You do not have permission to update this review.")
 
-class PerformanceReviewSubmitView(APIView):
+
+class PerformanceReviewSubmitView(ApiResponseMixin, APIView):
     """
     POST /api/reviews/<id>/submit/
     Manager (or HR/Admin) submits a DRAFT review → SUBMITTED
@@ -192,18 +201,19 @@ class PerformanceReviewSubmitView(APIView):
             raise ValidationError({"detail": "Only DRAFT reviews can be submitted."})
 
         review.status = PerformanceReview.Status.SUBMITTED
-        # optional manager_comment in body
         manager_comment = request.data.get("manager_comment")
         if manager_comment is not None:
             review.manager_comment = manager_comment
         review.save(update_fields=["status", "manager_comment"])
 
+        # ApiResponseMixin will wrap this into { data: {...}, meta: {...} }
         return Response(
             {"detail": "Review submitted.", "status": review.status},
             status=status.HTTP_200_OK,
         )
 
-class PerformanceReviewAcknowledgeView(APIView):
+
+class PerformanceReviewAcknowledgeView(ApiResponseMixin, APIView):
     """
     POST /api/reviews/<id>/acknowledge/
     Employee acknowledges a SUBMITTED review → COMPLETED
@@ -220,7 +230,6 @@ class PerformanceReviewAcknowledgeView(APIView):
         if review.status != PerformanceReview.Status.SUBMITTED:
             raise ValidationError({"detail": "Only SUBMITTED reviews can be acknowledged."})
 
-        # optional employee_comment update on acknowledge
         emp_comment = request.data.get("employee_comment")
         if emp_comment is not None:
             review.employee_comment = emp_comment
@@ -233,7 +242,8 @@ class PerformanceReviewAcknowledgeView(APIView):
             status=status.HTTP_200_OK,
         )
 
-class ReviewItemListCreateView(generics.ListCreateAPIView):
+
+class ReviewItemListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     """
     GET  /api/reviews/<review_id>/items/
         → list items of a review (same visibility as review)
@@ -251,7 +261,6 @@ class ReviewItemListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         review = self._get_review()
-        # Use same rules as review access
         qs = ReviewItem.objects.filter(review=review)
 
         if user.has_role(user.Role.HR, user.Role.ADMIN):
@@ -285,11 +294,11 @@ class ReviewItemListCreateView(generics.ListCreateAPIView):
                 raise PermissionDenied("You cannot add items to this review.")
 
         item = serializer.save(review=review)
-        # recompute overall score
         review.recalculate_overall_score()
         return item
 
-class ReviewItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class ReviewItemDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     GET/PATCH/DELETE /api/reviews/items/<id>/
         same access rules as parent review
@@ -304,7 +313,6 @@ class ReviewItemDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.has_role(user.Role.HR, user.Role.ADMIN):
             return qs
 
-        # filter down based on review queryset
         base_reviews = _reviews_queryset_for_user(user)
         return qs.filter(review__in=base_reviews)
 
@@ -345,6 +353,7 @@ class ReviewItemDetailView(generics.RetrieveUpdateDestroyAPIView):
         super().perform_destroy(instance)
         review.recalculate_overall_score()
 
+
 def _goals_queryset_for_user(user):
     qs = Goal.objects.select_related("employee__user", "cycle")
 
@@ -360,7 +369,8 @@ def _goals_queryset_for_user(user):
 
     return qs.none()
 
-class GoalListCreateView(generics.ListCreateAPIView):
+
+class GoalListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     """
     GET  /api/reviews/goals/
         HR/Admin → all
@@ -401,7 +411,7 @@ class GoalListCreateView(generics.ListCreateAPIView):
         else:
             raise ValidationError({"detail": "employee_id is required."})
 
-        # Check permission for manager / HR / employee
+        # Permissions
         if user.has_role(user.Role.HR, user.Role.ADMIN):
             pass
         elif user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
@@ -423,7 +433,8 @@ class GoalListCreateView(generics.ListCreateAPIView):
             created_by=user,
         )
 
-class GoalDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class GoalDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     GET/PATCH/DELETE /api/reviews/goals/<id>/
         - HR/Admin: any
@@ -452,7 +463,7 @@ class GoalDetailView(generics.RetrieveUpdateDestroyAPIView):
             serializer.save()
             return
 
-        # Employee → own goals only, but they cannot change employee/cycle
+        # Employee → own goals only
         if hasattr(user, "employee_profile") and goal.employee.user_id == user.id:
             serializer.save()
             return

@@ -1,0 +1,3646 @@
+openapi: 3.0.3
+info:
+  title: SmartHR360 API
+  version: 1.0.0
+  description: Comprehensive HR Management System with employee tracking, skills management,
+    performance reviews, and wellbeing surveys
+paths:
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Create a new user account. Returns user data and JWT tokens upon
+        successful registration.
+      summary: Register a new user
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              RegisterExample:
+                value:
+                  email: john.doe@company.com
+                  password: SecurePass123!
+                  first_name: John
+                  last_name: Doe
+                  role: EMPLOYEE
+                summary: Register Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User successfully registered
+        '400':
+          description: Bad request - validation errors
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Authenticate user and receive JWT tokens. Returns user data and
+        access/refresh tokens.
+      summary: User login
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              LoginExample:
+                value:
+                  email: john.doe@company.com
+                  password: SecurePass123!
+                summary: Login Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Login successful
+        '401':
+          description: Invalid credentials
+        '423':
+          description: Account locked due to too many failed attempts
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      description: Retrieve the profile information of the currently authenticated
+        user.
+      summary: Get current user profile
+      tags:
+      - User Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User profile retrieved successfully
+  /api/auth/users/:
+    get:
+      operationId: auth_users_list
+      description: Get a list of all users in the system. Requires HR role.
+      summary: List all users
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - User Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: List of users
+        '403':
+          description: Permission denied - HR role required
+  /api/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      description: Change password for authenticated user. Requires old password verification.
+      summary: Change password
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            examples:
+              ChangePasswordExample:
+                value:
+                  old_password: OldPass123!
+                  new_password: NewSecurePass456!
+                summary: Change Password Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Password changed successfully
+        '400':
+          description: Invalid old password or validation error
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Logout user by blacklisting their refresh token.
+      summary: User logout
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+            examples:
+              LogoutExample:
+                value:
+                  refresh: eyJ0eXAiOiJKV1QiLCJhbGc...
+                summary: Logout Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '400':
+          description: Invalid or missing refresh token
+  /api/auth/password-reset/request/:
+    post:
+      operationId: auth_password_reset_request_create
+      description: Request a password reset link. An email will be sent if the account
+        exists.
+      summary: Request password reset
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+            examples:
+              RequestPasswordReset:
+                value:
+                  email: john.doe@company.com
+                summary: Request Password Reset
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Reset link sent (if account exists)
+  /api/auth/password-reset/confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      description: Reset password using the token received via email.
+      summary: Reset password with token
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+            examples:
+              PasswordReset:
+                value:
+                  token: abc123def456
+                  new_password: NewSecurePass789!
+                summary: Password Reset
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid or expired token
+  /api/auth/email/verify/request/:
+    post:
+      operationId: auth_email_verify_request_create
+      description: Request an email verification link.
+      summary: Request email verification
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestEmailVerificationRequest'
+            examples:
+              RequestEmailVerification:
+                value:
+                  email: john.doe@company.com
+                summary: Request Email Verification
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestEmailVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestEmailVerificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Verification email sent
+  /api/auth/email/verify/confirm/:
+    post:
+      operationId: auth_email_verify_confirm_create
+      description: Verify email address using the token received via email.
+      summary: Verify email with token
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+            examples:
+              EmailVerification:
+                value:
+                  token: xyz789abc123
+                summary: Email Verification
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Email verified successfully
+        '400':
+          description: Invalid or expired token
+  /api/hr/departments/:
+    get:
+      operationId: hr_departments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDepartmentList'
+          description: ''
+    post:
+      operationId: hr_departments_create
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+  /api/hr/departments/{id}/:
+    get:
+      operationId: hr_departments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    put:
+      operationId: hr_departments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    patch:
+      operationId: hr_departments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    delete:
+      operationId: hr_departments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/employees/me/:
+    get:
+      operationId: hr_employees_me_retrieve
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: hr_employees_me_partial_update
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/hr/employees/my-team/:
+    get:
+      operationId: hr_employees_my_team_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployeeProfileList'
+          description: ''
+  /api/hr/employees/:
+    get:
+      operationId: hr_employees_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployeeProfileList'
+          description: ''
+    post:
+      operationId: hr_employees_create
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeProfile'
+          description: ''
+  /api/hr/employees/{id}/:
+    get:
+      operationId: hr_employees_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeProfile'
+          description: ''
+    put:
+      operationId: hr_employees_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeProfile'
+          description: ''
+    patch:
+      operationId: hr_employees_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeProfile'
+          description: ''
+  /api/hr/skills/:
+    get:
+      operationId: hr_skills_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSkillList'
+          description: ''
+    post:
+      operationId: hr_skills_create
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+          description: ''
+  /api/hr/skills/{id}/:
+    get:
+      operationId: hr_skills_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+          description: ''
+    put:
+      operationId: hr_skills_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SkillRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+          description: ''
+    patch:
+      operationId: hr_skills_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSkillRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+          description: ''
+    delete:
+      operationId: hr_skills_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/employee-skills/:
+    get:
+      operationId: hr_employee_skills_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployeeSkillList'
+          description: ''
+    post:
+      operationId: hr_employee_skills_create
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeSkill'
+          description: ''
+  /api/hr/employee-skills/{id}/:
+    get:
+      operationId: hr_employee_skills_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeSkill'
+          description: ''
+    put:
+      operationId: hr_employee_skills_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeSkillRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeSkill'
+          description: ''
+    patch:
+      operationId: hr_employee_skills_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeSkillRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeSkill'
+          description: ''
+  /api/hr/future-competencies/:
+    get:
+      operationId: hr_future_competencies_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFutureCompetencyList'
+          description: ''
+    post:
+      operationId: hr_future_competencies_create
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FutureCompetency'
+          description: ''
+  /api/hr/future-competencies/{id}/:
+    get:
+      operationId: hr_future_competencies_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FutureCompetency'
+          description: ''
+    put:
+      operationId: hr_future_competencies_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FutureCompetencyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FutureCompetency'
+          description: ''
+    patch:
+      operationId: hr_future_competencies_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFutureCompetencyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFutureCompetencyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFutureCompetencyRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FutureCompetency'
+          description: ''
+    delete:
+      operationId: hr_future_competencies_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - hr
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reviews/cycles/:
+    get:
+      operationId: reviews_cycles_list
+      description: |-
+        GET  /api/reviews/cycles/   → list all cycles (any authenticated)
+        POST /api/reviews/cycles/   → create cycle (HR or ADMIN)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewCycleList'
+          description: ''
+    post:
+      operationId: reviews_cycles_create
+      description: |-
+        GET  /api/reviews/cycles/   → list all cycles (any authenticated)
+        POST /api/reviews/cycles/   → create cycle (HR or ADMIN)
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewCycle'
+          description: ''
+  /api/reviews/cycles/{id}/:
+    get:
+      operationId: reviews_cycles_retrieve
+      description: |-
+        GET   /api/reviews/cycles/<id>/
+        PATCH /api/reviews/cycles/<id>/   → HR or ADMIN
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewCycle'
+          description: ''
+    put:
+      operationId: reviews_cycles_update
+      description: |-
+        GET   /api/reviews/cycles/<id>/
+        PATCH /api/reviews/cycles/<id>/   → HR or ADMIN
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewCycle'
+          description: ''
+    patch:
+      operationId: reviews_cycles_partial_update
+      description: |-
+        GET   /api/reviews/cycles/<id>/
+        PATCH /api/reviews/cycles/<id>/   → HR or ADMIN
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewCycleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewCycleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewCycle'
+          description: ''
+  /api/reviews/:
+    get:
+      operationId: reviews_list
+      description: |-
+        GET  /api/reviews/
+            HR/Admin → all
+            Manager  → their team reviews
+            Employee → own reviews
+
+        POST /api/reviews/
+            Manager / HR / Admin → create review
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerformanceReviewList'
+          description: ''
+    post:
+      operationId: reviews_create
+      description: |-
+        GET  /api/reviews/
+            HR/Admin → all
+            Manager  → their team reviews
+            Employee → own reviews
+
+        POST /api/reviews/
+            Manager / HR / Admin → create review
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+          description: ''
+  /api/reviews/{id}/:
+    get:
+      operationId: reviews_retrieve
+      description: |-
+        GET   /api/reviews/<id>/
+        PATCH /api/reviews/<id>/
+            - Manager: can edit if DRAFT
+            - HR/Admin: can always edit
+            - Employee: can update only employee_comment when DRAFT
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+          description: ''
+    put:
+      operationId: reviews_update
+      description: |-
+        GET   /api/reviews/<id>/
+        PATCH /api/reviews/<id>/
+            - Manager: can edit if DRAFT
+            - HR/Admin: can always edit
+            - Employee: can update only employee_comment when DRAFT
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformanceReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+          description: ''
+    patch:
+      operationId: reviews_partial_update
+      description: |-
+        GET   /api/reviews/<id>/
+        PATCH /api/reviews/<id>/
+            - Manager: can edit if DRAFT
+            - HR/Admin: can always edit
+            - Employee: can update only employee_comment when DRAFT
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPerformanceReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPerformanceReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPerformanceReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+          description: ''
+  /api/reviews/{id}/submit/:
+    post:
+      operationId: reviews_submit_create
+      description: |-
+        POST /api/reviews/<id>/submit/
+        Manager (or HR/Admin) submits a DRAFT review → SUBMITTED
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reviews/{id}/acknowledge/:
+    post:
+      operationId: reviews_acknowledge_create
+      description: |-
+        POST /api/reviews/<id>/acknowledge/
+        Employee acknowledges a SUBMITTED review → COMPLETED
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reviews/{review_id}/items/:
+    get:
+      operationId: reviews_items_list
+      description: |-
+        GET  /api/reviews/<review_id>/items/
+            → list items of a review (same visibility as review)
+
+        POST /api/reviews/<review_id>/items/
+            → Manager / HR / Admin add items when review is DRAFT
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: review_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewItemList'
+          description: ''
+    post:
+      operationId: reviews_items_create
+      description: |-
+        GET  /api/reviews/<review_id>/items/
+            → list items of a review (same visibility as review)
+
+        POST /api/reviews/<review_id>/items/
+            → Manager / HR / Admin add items when review is DRAFT
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+          description: ''
+  /api/reviews/items/{id}/:
+    get:
+      operationId: reviews_items_retrieve
+      description: |-
+        GET/PATCH/DELETE /api/reviews/items/<id>/
+            same access rules as parent review
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+          description: ''
+    put:
+      operationId: reviews_items_update
+      description: |-
+        GET/PATCH/DELETE /api/reviews/items/<id>/
+            same access rules as parent review
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+          description: ''
+    patch:
+      operationId: reviews_items_partial_update
+      description: |-
+        GET/PATCH/DELETE /api/reviews/items/<id>/
+            same access rules as parent review
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewItemRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+          description: ''
+    delete:
+      operationId: reviews_items_destroy
+      description: |-
+        GET/PATCH/DELETE /api/reviews/items/<id>/
+            same access rules as parent review
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reviews/goals/:
+    get:
+      operationId: reviews_goals_list
+      description: |-
+        GET  /api/reviews/goals/
+            HR/Admin → all
+            Manager  → team goals
+            Employee → own goals
+
+        POST /api/reviews/goals/
+            - Employee: can create own goals
+            - Manager: can create for team members
+            - HR/Admin: can create for any employee
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGoalList'
+          description: ''
+    post:
+      operationId: reviews_goals_create
+      description: |-
+        GET  /api/reviews/goals/
+            HR/Admin → all
+            Manager  → team goals
+            Employee → own goals
+
+        POST /api/reviews/goals/
+            - Employee: can create own goals
+            - Manager: can create for team members
+            - HR/Admin: can create for any employee
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+  /api/reviews/goals/{id}/:
+    get:
+      operationId: reviews_goals_retrieve
+      description: |-
+        GET/PATCH/DELETE /api/reviews/goals/<id>/
+            - HR/Admin: any
+            - Manager: team goals
+            - Employee: own goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+    put:
+      operationId: reviews_goals_update
+      description: |-
+        GET/PATCH/DELETE /api/reviews/goals/<id>/
+            - HR/Admin: any
+            - Manager: team goals
+            - Employee: own goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+    patch:
+      operationId: reviews_goals_partial_update
+      description: |-
+        GET/PATCH/DELETE /api/reviews/goals/<id>/
+            - HR/Admin: any
+            - Manager: team goals
+            - Employee: own goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+    delete:
+      operationId: reviews_goals_destroy
+      description: |-
+        GET/PATCH/DELETE /api/reviews/goals/<id>/
+            - HR/Admin: any
+            - Manager: team goals
+            - Employee: own goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/wellbeing/surveys/:
+    get:
+      operationId: wellbeing_surveys_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWellbeingSurveyList'
+          description: ''
+    post:
+      operationId: wellbeing_surveys_create
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellbeingSurvey'
+          description: ''
+  /api/wellbeing/surveys/{id}/:
+    get:
+      operationId: wellbeing_surveys_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellbeingSurvey'
+          description: ''
+    put:
+      operationId: wellbeing_surveys_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WellbeingSurveyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellbeingSurvey'
+          description: ''
+    patch:
+      operationId: wellbeing_surveys_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWellbeingSurveyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWellbeingSurveyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWellbeingSurveyRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellbeingSurvey'
+          description: ''
+  /api/wellbeing/surveys/{survey_id}/questions/:
+    get:
+      operationId: wellbeing_surveys_questions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: survey_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSurveyQuestionList'
+          description: ''
+    post:
+      operationId: wellbeing_surveys_questions_create
+      parameters:
+      - in: path
+        name: survey_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyQuestion'
+          description: ''
+  /api/wellbeing/questions/{id}/:
+    get:
+      operationId: wellbeing_questions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyQuestion'
+          description: ''
+    put:
+      operationId: wellbeing_questions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SurveyQuestionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyQuestion'
+          description: ''
+    patch:
+      operationId: wellbeing_questions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSurveyQuestionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSurveyQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSurveyQuestionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyQuestion'
+          description: ''
+    delete:
+      operationId: wellbeing_questions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/wellbeing/surveys/{survey_id}/submit/:
+    post:
+      operationId: wellbeing_surveys_submit_create
+      parameters:
+      - in: path
+        name: survey_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/wellbeing/surveys/{survey_id}/stats/:
+    get:
+      operationId: wellbeing_surveys_stats_retrieve
+      parameters:
+      - in: path
+        name: survey_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/wellbeing/surveys/{survey_id}/team-stats/:
+    get:
+      operationId: wellbeing_surveys_team_stats_retrieve
+      parameters:
+      - in: path
+        name: survey_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wellbeing
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    ChangePasswordRequest:
+      type: object
+      description: Serializer used for /change-password/
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - new_password
+      - old_password
+    Department:
+      type: object
+      description: |-
+        Canonical representation of a department.
+        Used everywhere in HR / reviews / wellbeing when we need department info.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    DepartmentRequest:
+      type: object
+      description: |-
+        Canonical representation of a department.
+        Used everywhere in HR / reviews / wellbeing when we need department info.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description:
+          type: string
+      required:
+      - code
+      - name
+    EmailVerificationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+    EmployeeProfile:
+      type: object
+      description: |-
+        Canonical representation of an employee profile.
+
+        READ:
+          - user: full UserSerializer
+          - department: DepartmentSerializer
+        WRITE:
+          - department_id: PK of Department
+          - manager_id: PK of EmployeeProfile (manager)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/Department'
+          readOnly: true
+        job_title:
+          type: string
+          maxLength: 150
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        phone_number:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - department
+      - id
+      - updated_at
+      - user
+    EmployeeProfileRequest:
+      type: object
+      description: |-
+        Canonical representation of an employee profile.
+
+        READ:
+          - user: full UserSerializer
+          - department: DepartmentSerializer
+        WRITE:
+          - department_id: PK of Department
+          - manager_id: PK of EmployeeProfile (manager)
+      properties:
+        department_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        manager_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        job_title:
+          type: string
+          maxLength: 150
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        phone_number:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+    EmployeeSkill:
+      type: object
+      description: |-
+        Representation of a skill evaluation for an employee.
+
+        READ:
+          - employee: EmployeeProfileSerializer (canonical employee object)
+          - skill: SkillSerializer
+          - last_evaluated_by: UserSerializer (minimal: full user, frontend can pick what it needs)
+
+        WRITE:
+          - employee_id: optional helper when not using the HR view logic directly
+          - skill_id: same
+          (But in your views, you typically resolve employee/skill manually.)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          allOf:
+          - $ref: '#/components/schemas/EmployeeProfile'
+          readOnly: true
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Skill'
+          readOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          minimum: 0
+          maximum: 9223372036854775807
+        target_level:
+          nullable: true
+          minimum: 0
+          maximum: 9223372036854775807
+          oneOf:
+          - $ref: '#/components/schemas/TargetLevelEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        last_evaluated_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        last_evaluated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - employee
+      - id
+      - last_evaluated_at
+      - last_evaluated_by
+      - level
+      - skill
+      - updated_at
+    EmployeeSkillRequest:
+      type: object
+      description: |-
+        Representation of a skill evaluation for an employee.
+
+        READ:
+          - employee: EmployeeProfileSerializer (canonical employee object)
+          - skill: SkillSerializer
+          - last_evaluated_by: UserSerializer (minimal: full user, frontend can pick what it needs)
+
+        WRITE:
+          - employee_id: optional helper when not using the HR view logic directly
+          - skill_id: same
+          (But in your views, you typically resolve employee/skill manually.)
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        skill_id:
+          type: integer
+          writeOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          minimum: 0
+          maximum: 9223372036854775807
+        target_level:
+          nullable: true
+          minimum: 0
+          maximum: 9223372036854775807
+          oneOf:
+          - $ref: '#/components/schemas/TargetLevelEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        notes:
+          type: string
+      required:
+      - level
+    EmploymentTypeEnum:
+      enum:
+      - FULL_TIME
+      - PART_TIME
+      - INTERN
+      - CONTRACTOR
+      type: string
+      description: |-
+        * `FULL_TIME` - Full time
+        * `PART_TIME` - Part time
+        * `INTERN` - Intern
+        * `CONTRACTOR` - Contractor
+    FutureCompetency:
+      type: object
+      description: |-
+        Representation of a future competency need.
+
+        READ:
+          - skill: SkillSerializer
+          - department: DepartmentSerializer (or null)
+
+        WRITE:
+          - skill_id: required (view can enforce it)
+          - department_id: optional (if company-wide competency)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Skill'
+          readOnly: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/Department'
+          readOnly: true
+        timeframe:
+          $ref: '#/components/schemas/TimeframeEnum'
+        importance:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - department
+      - id
+      - skill
+      - timeframe
+      - updated_at
+    FutureCompetencyRequest:
+      type: object
+      description: |-
+        Representation of a future competency need.
+
+        READ:
+          - skill: SkillSerializer
+          - department: DepartmentSerializer (or null)
+
+        WRITE:
+          - skill_id: required (view can enforce it)
+          - department_id: optional (if company-wide competency)
+      properties:
+        skill_id:
+          type: integer
+          writeOnly: true
+        department_id:
+          type: integer
+          writeOnly: true
+        timeframe:
+          $ref: '#/components/schemas/TimeframeEnum'
+        importance:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        description:
+          type: string
+      required:
+      - timeframe
+    Goal:
+      type: object
+      description: |-
+        Goals linked to an employee and optionally a cycle.
+
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee + cycle on read
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: string
+          readOnly: true
+        cycle:
+          allOf:
+          - $ref: '#/components/schemas/ReviewCycle'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/GoalStatusEnum'
+        progress_percent:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0–100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - cycle
+      - employee
+      - id
+      - title
+      - updated_at
+    GoalRequest:
+      type: object
+      description: |-
+        Goals linked to an employee and optionally a cycle.
+
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee + cycle on read
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        cycle_id:
+          type: integer
+          writeOnly: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/GoalStatusEnum'
+        progress_percent:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0–100
+      required:
+      - title
+    GoalStatusEnum:
+      enum:
+      - NOT_STARTED
+      - IN_PROGRESS
+      - DONE
+      type: string
+      description: |-
+        * `NOT_STARTED` - Not started
+        * `IN_PROGRESS` - In progress
+        * `DONE` - Done
+    LevelEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `1` - Beginner
+        * `2` - Intermediate
+        * `3` - Advanced
+        * `4` - Expert
+    LoginRequest:
+      type: object
+      description: Used for /login endpoint.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    LogoutRequest:
+      type: object
+      description: Serializer used for /logout/ to blacklist the refresh token.
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    NullEnum:
+      enum:
+      - null
+    PaginatedDepartmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+    PaginatedEmployeeProfileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeProfile'
+    PaginatedEmployeeSkillList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeSkill'
+    PaginatedFutureCompetencyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FutureCompetency'
+    PaginatedGoalList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Goal'
+    PaginatedPerformanceReviewList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceReview'
+    PaginatedReviewCycleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewCycle'
+    PaginatedReviewItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewItem'
+    PaginatedSkillList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+    PaginatedSurveyQuestionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PaginatedWellbeingSurveyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WellbeingSurvey'
+    PasswordResetRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - new_password
+      - token
+    PatchedDepartmentRequest:
+      type: object
+      description: |-
+        Canonical representation of a department.
+        Used everywhere in HR / reviews / wellbeing when we need department info.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description:
+          type: string
+    PatchedEmployeeProfileRequest:
+      type: object
+      description: |-
+        Canonical representation of an employee profile.
+
+        READ:
+          - user: full UserSerializer
+          - department: DepartmentSerializer
+        WRITE:
+          - department_id: PK of Department
+          - manager_id: PK of EmployeeProfile (manager)
+      properties:
+        department_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        manager_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        job_title:
+          type: string
+          maxLength: 150
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        phone_number:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+    PatchedEmployeeSkillRequest:
+      type: object
+      description: |-
+        Representation of a skill evaluation for an employee.
+
+        READ:
+          - employee: EmployeeProfileSerializer (canonical employee object)
+          - skill: SkillSerializer
+          - last_evaluated_by: UserSerializer (minimal: full user, frontend can pick what it needs)
+
+        WRITE:
+          - employee_id: optional helper when not using the HR view logic directly
+          - skill_id: same
+          (But in your views, you typically resolve employee/skill manually.)
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        skill_id:
+          type: integer
+          writeOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          minimum: 0
+          maximum: 9223372036854775807
+        target_level:
+          nullable: true
+          minimum: 0
+          maximum: 9223372036854775807
+          oneOf:
+          - $ref: '#/components/schemas/TargetLevelEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        notes:
+          type: string
+    PatchedFutureCompetencyRequest:
+      type: object
+      description: |-
+        Representation of a future competency need.
+
+        READ:
+          - skill: SkillSerializer
+          - department: DepartmentSerializer (or null)
+
+        WRITE:
+          - skill_id: required (view can enforce it)
+          - department_id: optional (if company-wide competency)
+      properties:
+        skill_id:
+          type: integer
+          writeOnly: true
+        department_id:
+          type: integer
+          writeOnly: true
+        timeframe:
+          $ref: '#/components/schemas/TimeframeEnum'
+        importance:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        description:
+          type: string
+    PatchedGoalRequest:
+      type: object
+      description: |-
+        Goals linked to an employee and optionally a cycle.
+
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee + cycle on read
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        cycle_id:
+          type: integer
+          writeOnly: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/GoalStatusEnum'
+        progress_percent:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0–100
+    PatchedPerformanceReviewRequest:
+      type: object
+      description: |-
+        Main serializer for performance reviews.
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee, manager, cycle, items on read
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        cycle_id:
+          type: integer
+          writeOnly: true
+        employee_comment:
+          type: string
+        manager_comment:
+          type: string
+    PatchedReviewCycleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+    PatchedReviewItemRequest:
+      type: object
+      properties:
+        criteria:
+          type: string
+          minLength: 1
+          maxLength: 255
+        score:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        comment:
+          type: string
+    PatchedSkillRequest:
+      type: object
+      description: Canonical representation of a skill.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+        category:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+    PatchedSurveyQuestionRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    PatchedWellbeingSurveyRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        is_active:
+          type: boolean
+    PerformanceReview:
+      type: object
+      description: |-
+        Main serializer for performance reviews.
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee, manager, cycle, items on read
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: string
+          readOnly: true
+        manager:
+          type: string
+          readOnly: true
+        cycle:
+          allOf:
+          - $ref: '#/components/schemas/ReviewCycle'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PerformanceReviewStatusEnum'
+          readOnly: true
+        overall_score:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Average of all item scores, e.g. 3.75
+        employee_comment:
+          type: string
+        manager_comment:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewItem'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - cycle
+      - employee
+      - id
+      - items
+      - manager
+      - overall_score
+      - status
+      - updated_at
+    PerformanceReviewRequest:
+      type: object
+      description: |-
+        Main serializer for performance reviews.
+        - accepts employee_id, cycle_id on create
+        - returns minimal nested employee, manager, cycle, items on read
+      properties:
+        employee_id:
+          type: integer
+          writeOnly: true
+        cycle_id:
+          type: integer
+          writeOnly: true
+        employee_comment:
+          type: string
+        manager_comment:
+          type: string
+    PerformanceReviewStatusEnum:
+      enum:
+      - DRAFT
+      - SUBMITTED
+      - COMPLETED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SUBMITTED` - Submitted
+        * `COMPLETED` - Completed
+    RegisterRequest:
+      type: object
+      description: Used for /register endpoint.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - password
+    RequestEmailVerificationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    RequestPasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    ReviewCycle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - end_date
+      - id
+      - name
+      - start_date
+      - updated_at
+    ReviewCycleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+      required:
+      - end_date
+      - name
+      - start_date
+    ReviewItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        criteria:
+          type: string
+          maxLength: 255
+        score:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - criteria
+      - id
+      - score
+      - updated_at
+    ReviewItemRequest:
+      type: object
+      properties:
+        criteria:
+          type: string
+          minLength: 1
+          maxLength: 255
+        score:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        comment:
+          type: string
+      required:
+      - criteria
+      - score
+    RoleEnum:
+      enum:
+      - EMPLOYEE
+      - MANAGER
+      - HR
+      - ADMIN
+      type: string
+      description: |-
+        * `EMPLOYEE` - Employee
+        * `MANAGER` - Manager
+        * `HR` - HR
+        * `ADMIN` - Admin
+    Skill:
+      type: object
+      description: Canonical representation of a skill.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        code:
+          type: string
+          maxLength: 50
+        description:
+          type: string
+        category:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - id
+      - name
+      - updated_at
+    SkillRequest:
+      type: object
+      description: Canonical representation of a skill.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+        category:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+      required:
+      - code
+      - name
+    SurveyQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          maxLength: 500
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - text
+    SurveyQuestionRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - text
+    TargetLevelEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `1` - Beginner
+        * `2` - Intermediate
+        * `3` - Advanced
+        * `4` - Expert
+    TimeframeEnum:
+      enum:
+      - SHORT
+      - MEDIUM
+      - LONG
+      type: string
+      description: |-
+        * `SHORT` - 0–12 months
+        * `MEDIUM` - 1–3 years
+        * `LONG` - 3+ years
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    TypeEnum:
+      enum:
+      - SCALE_1_5
+      - YES_NO
+      - TEXT
+      type: string
+      description: |-
+        * `SCALE_1_5` - Scale 1–5
+        * `YES_NO` - Yes / No
+        * `TEXT` - Free text
+    User:
+      type: object
+      description: Public user data returned to the frontend.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - id
+    UserRequest:
+      type: object
+      description: Public user data returned to the frontend.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+    WellbeingSurvey:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - questions
+      - title
+      - updated_at
+    WellbeingSurveyRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - title
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

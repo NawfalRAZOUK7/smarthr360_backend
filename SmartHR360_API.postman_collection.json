@@ -1,0 +1,1176 @@
+{
+  "info": {
+    "_postman_id": "smarthr360-api-collection",
+    "name": "SmartHR360 API",
+    "description": "Complete API collection for SmartHR360 HR Management System\n\n## Features\n- Employee Management\n- Skills & Competencies\n- Performance Reviews\n- Goal Management\n- Wellbeing Surveys\n\n## Authentication\nThis API uses JWT Bearer tokens. After login, copy the `access` token from the response and set it in the collection variables as `access_token`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@company.com\",\n  \"password\": \"SecurePass123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"role\": \"EMPLOYEE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            },
+            "description": "Register a new user account. Returns user data and JWT tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"access_token\", jsonData.tokens.access);",
+                  "pm.collectionVariables.set(\"refresh_token\", jsonData.tokens.refresh);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@company.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "Authenticate user and receive JWT tokens. Automatically sets access_token variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me", ""]
+            },
+            "description": "Get profile information of the currently authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"OldPass123!\",\n  \"new_password\": \"NewSecurePass456!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/change-password/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "change-password", ""]
+            },
+            "description": "Change password for authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/request-password-reset/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "request-password-reset", ""]
+            },
+            "description": "Request a password reset link via email."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"your-reset-token\",\n  \"new_password\": \"NewSecurePass789!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/password-reset/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "password-reset", ""]
+            },
+            "description": "Reset password using token from email."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Email Verification",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/request-email-verification/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "request-email-verification", ""]
+            },
+            "description": "Request an email verification link."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"your-verification-token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/email-verification/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "email-verification", ""]
+            },
+            "description": "Verify email using token from email."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout", ""]
+            },
+            "description": "Logout user by blacklisting refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Users (HR Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/users/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "users", ""]
+            },
+            "description": "Get list of all users. Requires HR role."
+          },
+          "response": []
+        }
+      ],
+      "description": "User authentication and account management endpoints"
+    },
+    {
+      "name": "HR - Departments",
+      "item": [
+        {
+          "name": "List Departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ""]
+            },
+            "description": "Get list of all departments"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Department (HR Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Information Technology\",\n  \"code\": \"IT\",\n  \"description\": \"IT and software development\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ""]
+            },
+            "description": "Create a new department. Requires HR role."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get details of a specific department"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Department (HR Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update department. Requires HR role."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Department (HR Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete department. Requires HR role."
+          },
+          "response": []
+        }
+      ],
+      "description": "Department management endpoints"
+    },
+    {
+      "name": "HR - Employees",
+      "item": [
+        {
+          "name": "List Employees (HR Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/?department=IT&is_active=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ""],
+              "query": [
+                {
+                  "key": "department",
+                  "value": "IT",
+                  "description": "Filter by department code"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "description": "Filter by active status"
+                },
+                {
+                  "key": "role",
+                  "value": "MANAGER",
+                  "disabled": true,
+                  "description": "Filter by role"
+                },
+                {
+                  "key": "hired_after",
+                  "value": "2023-01-01",
+                  "disabled": true,
+                  "description": "Filter by hire date"
+                },
+                {
+                  "key": "search",
+                  "value": "john",
+                  "disabled": true,
+                  "description": "Search in names and email"
+                }
+              ]
+            },
+            "description": "List all employees with optional filters. Requires HR role."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Employee Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", "me", ""]
+            },
+            "description": "Get current user's employee profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Employee Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated bio\",\n  \"phone_number\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", "me", ""]
+            },
+            "description": "Update own employee profile (limited fields)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Employee (HR Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"department_id\": 1,\n  \"job_title\": \"Software Engineer\",\n  \"hire_date\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ""]
+            },
+            "description": "Create employee profile. Requires HR role."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get specific employee details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee (HR Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update employee profile. Requires HR role."
+          },
+          "response": []
+        }
+      ],
+      "description": "Employee management endpoints"
+    },
+    {
+      "name": "Skills",
+      "item": [
+        {
+          "name": "List Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/skills/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "skills", ""]
+            },
+            "description": "Get list of all skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Skill (HR Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Python Programming\",\n  \"category\": \"Technical\",\n  \"description\": \"Proficiency in Python programming language\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/skills/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "skills", ""]
+            },
+            "description": "Create a new skill. Requires HR role."
+          },
+          "response": []
+        },
+        {
+          "name": "List Employee Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":employee_id", "skills", ""],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get all skills for a specific employee"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Skill to Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skill_id\": 1,\n  \"proficiency_level\": \"INTERMEDIATE\",\n  \"notes\": \"Completed Python certification\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":employee_id", "skills", ""],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Associate skill with employee"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee Skill",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proficiency_level\": \"ADVANCED\",\n  \"notes\": \"5 years of experience\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/:skill_id/",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ":employee_id",
+                "skills",
+                ":skill_id",
+                ""
+              ],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "1"
+                },
+                {
+                  "key": "skill_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update employee skill proficiency"
+          },
+          "response": []
+        },
+        {
+          "name": "List Future Competencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr/future-competencies/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "future-competencies", ""]
+            },
+            "description": "Get list of future competencies"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Future Competency (HR Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AI & Machine Learning\",\n  \"description\": \"Future skills in artificial intelligence\",\n  \"priority\": \"HIGH\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/future-competencies/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "future-competencies", ""]
+            },
+            "description": "Create future competency. Requires HR role."
+          },
+          "response": []
+        }
+      ],
+      "description": "Skills and competency management"
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List Review Cycles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/cycles/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "cycles", ""]
+            },
+            "description": "Get list of all review cycles"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Review Cycle (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q1 2024 Performance Review\",\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-03-31\",\n  \"description\": \"First quarter performance review cycle\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/cycles/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "cycles", ""]
+            },
+            "description": "Create review cycle. Requires HR/Admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "List Performance Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ""]
+            },
+            "description": "List reviews filtered by role permissions"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Performance Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1,\n  \"cycle_id\": 1,\n  \"manager_id\": 2,\n  \"review_period_start\": \"2024-01-01\",\n  \"review_period_end\": \"2024-03-31\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ""]
+            },
+            "description": "Create performance review"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Performance Review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get specific review details"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/:id/submit/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ":id", "submit", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Submit review for approval"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Review (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/:id/approve/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ":id", "approve", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Approve submitted review. Requires HR/Admin."
+          },
+          "response": []
+        },
+        {
+          "name": "List Review Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/:review_id/items/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ":review_id", "items", ""],
+              "variable": [
+                {
+                  "key": "review_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get all items/ratings for a review"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Review Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"competency_name\": \"Communication Skills\",\n  \"score\": 4.0,\n  \"comments\": \"Excellent presentation skills\",\n  \"weight\": 1.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/:review_id/items/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", ":review_id", "items", ""],
+              "variable": [
+                {
+                  "key": "review_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Add rating item to review"
+          },
+          "response": []
+        },
+        {
+          "name": "List Goals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/goals/?employee_id=1&status=IN_PROGRESS",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "goals", ""],
+              "query": [
+                {
+                  "key": "employee_id",
+                  "value": "1",
+                  "description": "Filter by employee"
+                },
+                {
+                  "key": "status",
+                  "value": "IN_PROGRESS",
+                  "description": "Filter by status"
+                }
+              ]
+            },
+            "description": "List goals with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Goal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1,\n  \"title\": \"Complete Python Certification\",\n  \"description\": \"Obtain Python professional certification\",\n  \"target_date\": \"2024-06-30\",\n  \"status\": \"NOT_STARTED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/goals/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "goals", ""]
+            },
+            "description": "Create a new goal"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Goal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"progress_notes\": \"Started course materials\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/goals/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "goals", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update goal status and details"
+          },
+          "response": []
+        }
+      ],
+      "description": "Performance reviews and goal management"
+    },
+    {
+      "name": "Wellbeing",
+      "item": [
+        {
+          "name": "List Surveys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/surveys/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "surveys", ""]
+            },
+            "description": "Get list of all wellbeing surveys"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Survey (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Q1 2024 Employee Wellbeing Check\",\n  \"description\": \"Quarterly survey to assess employee satisfaction\",\n  \"is_active\": true,\n  \"is_anonymous\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/surveys/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "surveys", ""]
+            },
+            "description": "Create wellbeing survey. Requires HR/Admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Survey Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/surveys/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "surveys", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get specific survey details"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Survey Statistics (HR/Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/surveys/:id/stats/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "surveys", ":id", "stats", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get aggregated survey statistics. Requires HR/Admin."
+          },
+          "response": []
+        },
+        {
+          "name": "List Survey Responses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/responses/?survey_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "responses", ""],
+              "query": [
+                {
+                  "key": "survey_id",
+                  "value": "1",
+                  "description": "Filter by survey"
+                },
+                {
+                  "key": "employee_id",
+                  "value": "1",
+                  "disabled": true,
+                  "description": "Filter by employee (HR only)"
+                }
+              ]
+            },
+            "description": "List survey responses (filtered by role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Survey Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"survey_id\": 1,\n  \"work_life_balance\": 4,\n  \"job_satisfaction\": 5,\n  \"stress_level\": 2,\n  \"management_support\": 4,\n  \"team_collaboration\": 5,\n  \"comments\": \"Very satisfied with work environment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/responses/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "responses", ""]
+            },
+            "description": "Submit a survey response"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Response Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/responses/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "responses", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get specific response details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Survey Response",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"work_life_balance\": 5,\n  \"comments\": \"Updated feedback\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/responses/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wellbeing", "responses", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update own survey response"
+          },
+          "response": []
+        }
+      ],
+      "description": "Employee wellbeing surveys and responses"
+    }
+  ]
+}

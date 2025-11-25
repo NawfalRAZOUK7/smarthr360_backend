@@ -1,20 +1,40 @@
 from rest_framework import serializers
-from django.utils import timezone
 
 from .models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
-from accounts.models import User
 from accounts.serializers import UserSerializer
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    """
+    Canonical representation of a department.
+    Used everywhere in HR / reviews / wellbeing when we need department info.
+    """
+
     class Meta:
         model = Department
-        fields = ["id", "name", "code", "description"]
+        fields = [
+            "id",
+            "name",
+            "code",
+            "description",
+        ]
 
 
 class EmployeeProfileSerializer(serializers.ModelSerializer):
+    """
+    Canonical representation of an employee profile.
+
+    READ:
+      - user: full UserSerializer
+      - department: DepartmentSerializer
+    WRITE:
+      - department_id: PK of Department
+      - manager_id: PK of EmployeeProfile (manager)
+    """
+
     user = UserSerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
+
     department_id = serializers.PrimaryKeyRelatedField(
         source="department",
         queryset=Department.objects.all(),
@@ -48,12 +68,16 @@ class EmployeeProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+        ]
+
 
 class EmployeeSelfUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer used when an EMPLOYEE updates their own profile.
-    Only allows "safe" personal fields.
+    Only allows 'safe' personal fields.
     """
 
     class Meta:
@@ -63,7 +87,12 @@ class EmployeeSelfUpdateSerializer(serializers.ModelSerializer):
             "date_of_birth",
         ]
 
+
 class SkillSerializer(serializers.ModelSerializer):
+    """
+    Canonical representation of a skill.
+    """
+
     class Meta:
         model = Skill
         fields = [
@@ -76,15 +105,33 @@ class SkillSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+        ]
+
 
 class EmployeeSkillSerializer(serializers.ModelSerializer):
+    """
+    Representation of a skill evaluation for an employee.
+
+    READ:
+      - employee: EmployeeProfileSerializer (canonical employee object)
+      - skill: SkillSerializer
+      - last_evaluated_by: UserSerializer (minimal: full user, frontend can pick what it needs)
+
+    WRITE:
+      - employee_id: optional helper when not using the HR view logic directly
+      - skill_id: same
+      (But in your views, you typically resolve employee/skill manually.)
+    """
+
     employee_id = serializers.IntegerField(write_only=True, required=False)
     skill_id = serializers.IntegerField(write_only=True, required=False)
 
-    employee = serializers.SerializerMethodField(read_only=True)
+    employee = EmployeeProfileSerializer(read_only=True)
     skill = SkillSerializer(read_only=True)
-    last_evaluated_by = serializers.SerializerMethodField(read_only=True)
+    last_evaluated_by = UserSerializer(read_only=True)
 
     class Meta:
         model = EmployeeSkill
@@ -111,33 +158,34 @@ class EmployeeSkillSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_employee(self, obj):
-        # return minimal view of employee
-        return {
-            "id": obj.employee.id,
-            "user": {
-                "id": obj.employee.user.id,
-                "email": obj.employee.user.email,
-                "first_name": obj.employee.user.first_name,
-                "last_name": obj.employee.user.last_name,
-            },
-            "department": obj.employee.department.name if obj.employee.department else None,
-        }
+    def validate(self, attrs):
+        """
+        Optional small safeguard:
+        If someone uses the serializer directly with employee_id/skill_id
+        (outside of your views logic), you can validate their presence/format here.
+        We keep this light to not conflict with the logic in views.
+        """
+        return super().validate(attrs)
 
-    def get_last_evaluated_by(self, obj):
-        if not obj.last_evaluated_by:
-            return None
-        return {
-            "id": obj.last_evaluated_by.id,
-            "email": obj.last_evaluated_by.email,
-        }
 
 class FutureCompetencySerializer(serializers.ModelSerializer):
+    """
+    Representation of a future competency need.
+
+    READ:
+      - skill: SkillSerializer
+      - department: DepartmentSerializer (or null)
+
+    WRITE:
+      - skill_id: required (view can enforce it)
+      - department_id: optional (if company-wide competency)
+    """
+
     skill_id = serializers.IntegerField(write_only=True, required=False)
     department_id = serializers.IntegerField(write_only=True, required=False)
 
     skill = SkillSerializer(read_only=True)
-    department = serializers.SerializerMethodField(read_only=True)
+    department = DepartmentSerializer(read_only=True)
 
     class Meta:
         model = FutureCompetency
@@ -153,13 +201,9 @@ class FutureCompetencySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["skill", "department", "created_at", "updated_at"]
-
-    def get_department(self, obj):
-        if not obj.department:
-            return None
-        return {
-            "id": obj.department.id,
-            "name": obj.department.name,
-            "code": obj.department.code,
-        }
+        read_only_fields = [
+            "skill",
+            "department",
+            "created_at",
+            "updated_at",
+        ]

@@ -1,4 +1,4 @@
-# wellbeing/views.py
+# wellbeing/views.py (UPDATED WITH ENVELOPE)
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 from hr.models import EmployeeProfile
+from smarthr360_backend.api_mixins import ApiResponseMixin
 from .models import WellbeingSurvey, SurveyQuestion, SurveyResponse
 from .serializers import (
     WellbeingSurveySerializer,
@@ -16,11 +17,8 @@ from .serializers import (
     TeamStatsSerializer,
 )
 
-class WellbeingSurveyListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /api/wellbeing/surveys/      → list surveys (any authenticated)
-    POST /api/wellbeing/surveys/      → create survey (HR / ADMIN)
-    """
+
+class WellbeingSurveyListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     queryset = WellbeingSurvey.objects.all()
     serializer_class = WellbeingSurveySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -31,11 +29,8 @@ class WellbeingSurveyListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("Only HR or Admin can create wellbeing surveys.")
         serializer.save(created_by=user)
 
-class WellbeingSurveyDetailView(generics.RetrieveUpdateAPIView):
-    """
-    GET   /api/wellbeing/surveys/<id>/
-    PATCH /api/wellbeing/surveys/<id>/   → HR / ADMIN only
-    """
+
+class WellbeingSurveyDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
     queryset = WellbeingSurvey.objects.all()
     serializer_class = WellbeingSurveySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -46,11 +41,8 @@ class WellbeingSurveyDetailView(generics.RetrieveUpdateAPIView):
             raise PermissionDenied("Only HR or Admin can update wellbeing surveys.")
         serializer.save()
 
-class SurveyQuestionListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /api/wellbeing/surveys/<survey_id>/questions/
-    POST /api/wellbeing/surveys/<survey_id>/questions/   → HR / ADMIN
-    """
+
+class SurveyQuestionListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     serializer_class = SurveyQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -59,20 +51,16 @@ class SurveyQuestionListCreateView(generics.ListCreateAPIView):
         return get_object_or_404(WellbeingSurvey, pk=survey_id)
 
     def get_queryset(self):
-        survey = self.get_survey()
-        return SurveyQuestion.objects.filter(survey=survey)
+        return SurveyQuestion.objects.filter(survey=self.get_survey())
 
     def perform_create(self, serializer):
         user = self.request.user
         if not user.has_role(user.Role.HR, user.Role.ADMIN):
             raise PermissionDenied("Only HR or Admin can add questions.")
-        survey = self.get_survey()
-        serializer.save(survey=survey)
+        serializer.save(survey=self.get_survey())
 
-class SurveyQuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET/PATCH/DELETE /api/wellbeing/questions/<id>/   → HR / ADMIN only for write
-    """
+
+class SurveyQuestionDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = SurveyQuestion.objects.select_related("survey")
     serializer_class = SurveyQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -89,26 +77,8 @@ class SurveyQuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("Only HR or Admin can delete questions.")
         super().perform_destroy(instance)
 
-class SurveySubmitView(APIView):
-    """
-    POST /api/wellbeing/surveys/<survey_id>/submit/
-    Body:
-    {
-      "answers": {
-        "3": "4",
-        "4": "yes",
-        "5": "Feeling tired lately"
-      }
-    }
 
-    ⚠ We do NOT link to User or EmployeeProfile.
-    Only store:
-      - survey
-      - random response_id (UUID)
-      - answers JSON
-      - department (if user has one)
-      - submitted_at
-    """
+class SurveySubmitView(ApiResponseMixin, APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, survey_id):
@@ -121,11 +91,9 @@ class SurveySubmitView(APIView):
         serializer.is_valid(raise_exception=True)
         answers = serializer.validated_data["answers"]
 
-        # derive department from employee profile, if exists
         department = None
-        user = request.user
-        if hasattr(user, "employee_profile") and user.employee_profile.department:
-            department = user.employee_profile.department
+        if hasattr(request.user, "employee_profile"):
+            department = request.user.employee_profile.department
 
         response = SurveyResponse.objects.create(
             survey=survey,
@@ -133,7 +101,7 @@ class SurveySubmitView(APIView):
             department=department,
         )
 
-        return Response(
+        return self.success_response(
             {
                 "detail": "Survey submitted successfully.",
                 "response_id": str(response.response_id),
@@ -141,36 +109,8 @@ class SurveySubmitView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-class SurveyStatsView(APIView):
-    """
-    GET /api/wellbeing/surveys/<survey_id>/stats/
-    HR / ADMIN only.
 
-    Returns:
-    {
-      "count_responses": 14,
-      "questions": [
-        {
-          "id": 3,
-          "text": "...",
-          "type": "SCALE_1_5",
-          "avg": 3.7,
-          "distribution": {"1": 1, "2": 2, "3": 4, "4": 5, "5": 2}
-        },
-        {
-          "id": 4,
-          "type": "YES_NO",
-          "yes": 10,
-          "no": 4
-        },
-        {
-          "id": 5,
-          "type": "TEXT",
-          "count_text": 14
-        }
-      ]
-    }
-    """
+class SurveyStatsView(ApiResponseMixin, APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, survey_id):
@@ -180,51 +120,31 @@ class SurveyStatsView(APIView):
 
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
         responses = SurveyResponse.objects.filter(survey=survey)
-        count_responses = responses.count()
 
         questions_data = []
-
         for q in survey.questions.all():
             qid = str(q.id)
-            q_data = {
-                "id": q.id,
-                "text": q.text,
-                "type": q.type,
-            }
+            q_data = {"id": q.id, "text": q.text, "type": q.type}
 
-            # collect all answers for this question
-            values = []
-            for r in responses:
-                if qid in r.answers:
-                    values.append(r.answers[qid])
+            values = [r.answers.get(qid) for r in responses if qid in r.answers]
 
             if q.type == SurveyQuestion.QuestionType.SCALE_1_5:
                 nums = []
-                dist = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+                dist = {str(i): 0 for i in range(1, 6)}
                 for v in values:
                     try:
                         n = int(v)
                         if 1 <= n <= 5:
                             nums.append(n)
                             dist[str(n)] += 1
-                    except (ValueError, TypeError):
+                    except:
                         continue
-                if nums:
-                    avg = sum(nums) / len(nums)
-                else:
-                    avg = None
-                q_data["avg"] = avg
+                q_data["avg"] = sum(nums) / len(nums) if nums else None
                 q_data["distribution"] = dist
 
             elif q.type == SurveyQuestion.QuestionType.YES_NO:
-                yes = 0
-                no = 0
-                for v in values:
-                    s = str(v).lower()
-                    if s in ["yes", "oui"]:
-                        yes += 1
-                    elif s in ["no", "non"]:
-                        no += 1
+                yes = sum(str(v).lower() in ["yes", "oui"] for v in values)
+                no = sum(str(v).lower() in ["no", "non"] for v in values)
                 q_data["yes"] = yes
                 q_data["no"] = no
 
@@ -234,68 +154,49 @@ class SurveyStatsView(APIView):
             questions_data.append(q_data)
 
         payload = {
-            "count_responses": count_responses,
+            "count_responses": responses.count(),
             "questions": questions_data,
         }
 
-        stats_serializer = SurveyStatsSerializer(data=payload)
-        stats_serializer.is_valid(raise_exception=True)
-        return Response(stats_serializer.data, status=status.HTTP_200_OK)
+        s = SurveyStatsSerializer(data=payload)
+        s.is_valid(raise_exception=True)
 
-class TeamStatsView(APIView):
-    """
-    GET /api/wellbeing/surveys/<survey_id>/team-stats/
+        return self.success_response(s.data)
 
-    Manager:
-      - identifies their employees (EmployeeProfile.manager == manager_profile)
-      - collects their departments
-      - aggregates responses for those departments
 
-    HR/Admin can also call it (they'll see same aggregate as manager would for his teams).
-    """
+class TeamStatsView(ApiResponseMixin, APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, survey_id):
         user = request.user
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
 
-        # HR/Admin → full org stats, but still using this structure
+        # Team filtering
         if user.has_role(user.Role.HR, user.Role.ADMIN):
             team_profiles = EmployeeProfile.objects.all()
+        elif user.role == User.Role.MANAGER and hasattr(user, "employee_profile"):
+            team_profiles = EmployeeProfile.objects.filter(manager=user.employee_profile)
         else:
-            # Manager only
-            if not (user.role == user.Role.MANAGER and hasattr(user, "employee_profile")):
-                raise PermissionDenied("Only managers (or HR/Admin) can view team stats.")
-            manager_profile = user.employee_profile
-            team_profiles = EmployeeProfile.objects.filter(manager=manager_profile)
+            raise PermissionDenied("Only managers (or HR/Admin) can view team stats.")
 
         team_size = team_profiles.count()
-        dept_ids = {
-            ep.department_id for ep in team_profiles if ep.department_id is not None
-        }
+        dept_ids = {p.department_id for p in team_profiles if p.department_id}
 
         if not dept_ids:
-            payload = {
-                "team_size": team_size,
-                "responses": 0,
-                "aggregates": {},
-            }
-            s = TeamStatsSerializer(data=payload)
-            s.is_valid(raise_exception=True)
-            return Response(s.data, status=status.HTTP_200_OK)
+            return self.success_response(
+                {"team_size": team_size, "responses": 0, "aggregates": {}}
+            )
 
         responses = SurveyResponse.objects.filter(
             survey=survey,
             department_id__in=dept_ids,
         )
-        responses_count = responses.count()
 
-        # compute average for SCALE_1_5 questions
+        # Aggregates
         aggregates = {}
         for q in survey.questions.all():
             if q.type != SurveyQuestion.QuestionType.SCALE_1_5:
                 continue
-
             qid = str(q.id)
             nums = []
             for r in responses:
@@ -304,23 +205,17 @@ class TeamStatsView(APIView):
                         n = int(r.answers[qid])
                         if 1 <= n <= 5:
                             nums.append(n)
-                    except (ValueError, TypeError):
+                    except:
                         continue
-
-            if nums:
-                avg = sum(nums) / len(nums)
-            else:
-                avg = None
-
-            # key by question id (string), can be mapped to labels in frontend
-            aggregates[qid] = avg
+            aggregates[qid] = sum(nums) / len(nums) if nums else None
 
         payload = {
             "team_size": team_size,
-            "responses": responses_count,
+            "responses": responses.count(),
             "aggregates": aggregates,
         }
 
         s = TeamStatsSerializer(data=payload)
         s.is_valid(raise_exception=True)
-        return Response(s.data, status=status.HTTP_200_OK)
+
+        return self.success_response(s.data)

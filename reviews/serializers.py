@@ -1,10 +1,7 @@
 # reviews/serializers.py
-from django.utils import timezone
 from rest_framework import serializers
 
-from hr.models import EmployeeProfile
 from .models import ReviewCycle, PerformanceReview, ReviewItem, Goal
-from accounts.models import User
 
 
 class ReviewCycleSerializer(serializers.ModelSerializer):
@@ -21,6 +18,7 @@ class ReviewCycleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+
 class ReviewItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReviewItem
@@ -34,11 +32,12 @@ class ReviewItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+
 class PerformanceReviewSerializer(serializers.ModelSerializer):
     """
     Main serializer for performance reviews.
     - accepts employee_id, cycle_id on create
-    - returns nested employee, manager, cycle, items
+    - returns minimal nested employee, manager, cycle, items on read
     """
 
     employee_id = serializers.IntegerField(write_only=True, required=False)
@@ -78,31 +77,44 @@ class PerformanceReviewSerializer(serializers.ModelSerializer):
         ]
 
     def get_employee(self, obj):
+        # minimal nested employee representation (id + user + department name)
+        emp = obj.employee
+        user = emp.user
         return {
-            "id": obj.employee.id,
+            "id": emp.id,
             "user": {
-                "id": obj.employee.user.id,
-                "email": obj.employee.user.email,
-                "first_name": obj.employee.user.first_name,
-                "last_name": obj.employee.user.last_name,
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
             },
-            "department": obj.employee.department.name if obj.employee.department else None,
+            "department": emp.department.name if emp.department else None,
         }
 
     def get_manager(self, obj):
-        if not obj.manager:
+        mgr = obj.manager
+        if not mgr:
             return None
+        user = mgr.user
         return {
-            "id": obj.manager.id,
+            "id": mgr.id,
             "user": {
-                "id": obj.manager.user.id,
-                "email": obj.manager.user.email,
-                "first_name": obj.manager.user.first_name,
-                "last_name": obj.manager.user.last_name,
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
             },
         }
 
+
 class GoalSerializer(serializers.ModelSerializer):
+    """
+    Goals linked to an employee and optionally a cycle.
+
+    - accepts employee_id, cycle_id on create
+    - returns minimal nested employee + cycle on read
+    """
+
     employee_id = serializers.IntegerField(write_only=True, required=False)
     cycle_id = serializers.IntegerField(write_only=True, required=False)
 
@@ -132,12 +144,14 @@ class GoalSerializer(serializers.ModelSerializer):
         ]
 
     def get_employee(self, obj):
+        emp = obj.employee
+        user = emp.user
         return {
-            "id": obj.employee.id,
+            "id": emp.id,
             "user": {
-                "id": obj.employee.user.id,
-                "email": obj.employee.user.email,
-                "first_name": obj.employee.user.first_name,
-                "last_name": obj.employee.user.last_name,
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
             },
         }

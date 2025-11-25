@@ -8,7 +8,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 
-
 from .models import (
     User,
     PasswordResetToken,
@@ -90,16 +89,20 @@ class LoginSerializer(serializers.Serializer):
             # optional: we don't log here since we don't have a user FK
             raise serializers.ValidationError("Identifiants invalides.")
 
-        # Check lock status
-        # 🔧 HERE: always ensure a LoginAttempt exists
+        # Ensure a LoginAttempt exists
         attempt, _ = LoginAttempt.objects.get_or_create(user=user)
 
-        # 1) Check lockout
+        # 1) Check lockout (robust against locked_until = None)
         if attempt.check_lock_status():
-            from django.utils import timezone
-
-            seconds_left = (attempt.locked_until - timezone.now()).total_seconds()
-            minutes_left = max(1, int(seconds_left / 60))
+            # 🔧 Robustness fix: handle possible None locked_until
+            if attempt.locked_until:
+                seconds_left = (attempt.locked_until - timezone.now()).total_seconds()
+                if seconds_left < 0:
+                    seconds_left = 0
+                minutes_left = max(1, int(seconds_left / 60)) if seconds_left > 0 else 0
+            else:
+                seconds_left = 0
+                minutes_left = 0
 
             # log failed login (locked)
             LoginActivity.objects.create(
@@ -108,7 +111,11 @@ class LoginSerializer(serializers.Serializer):
                 success=False,
                 ip_address=ip,
                 user_agent=ua,
-                extra_data={"reason": "locked", "minutes_left": minutes_left},
+                extra_data={
+                    "reason": "locked",
+                    "seconds_left": int(seconds_left),
+                    "minutes_left": minutes_left,
+                },
             )
 
             raise serializers.ValidationError(
@@ -120,7 +127,7 @@ class LoginSerializer(serializers.Serializer):
             # before increment, were we unlocked?
             was_locked_before = attempt.is_locked
 
-            attempt.mark_failed() # increments & possibly locks
+            attempt.mark_failed()  # increments & possibly locks
 
             remaining = attempt.MAX_ATTEMPTS - attempt.failed_attempts
 
@@ -138,7 +145,7 @@ class LoginSerializer(serializers.Serializer):
                 },
             )
 
-            # 🔔 NEW: send email exactly when account becomes locked now
+            # 🔔 Send email exactly when account becomes locked now
             if not was_locked_before and attempt.is_locked:
                 try:
                     send_mail(
@@ -177,6 +184,7 @@ class LoginSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     """
@@ -222,6 +230,7 @@ class LogoutSerializer(serializers.Serializer):
         except TokenError:
             raise exceptions.ValidationError("Token invalide ou déjà blacklisté.")
 
+
 class RequestPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -229,8 +238,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
         try:
             user = User.objects.get(email=value)
         except User.DoesNotExist:
-            # You can either silently succeed or show an error.
-            # Here we give a generic error.
+            # generic error (you could also silently succeed)
             raise serializers.ValidationError("Aucun utilisateur avec cet email.")
         self.context["user"] = user
         return value
@@ -292,6 +300,7 @@ class PasswordResetSerializer(serializers.Serializer):
         token_obj.mark_used()
         return user
 
+
 class RequestEmailVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -329,6 +338,7 @@ class RequestEmailVerificationSerializer(serializers.Serializer):
         )
 
         return token_obj
+
 
 class EmailVerificationSerializer(serializers.Serializer):
     token = serializers.CharField()

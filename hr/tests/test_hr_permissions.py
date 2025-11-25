@@ -114,7 +114,13 @@ class HRPermissionsTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        return response.data["tokens"]["access"]
+        # Envelope-aware
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        tokens = data.get("tokens", {})
+        access = tokens.get("access")
+        self.assertIsNotNone(access, f"No access token in login response: {response.data}")
+        return access
 
     # ---------- Tests ----------
 
@@ -124,8 +130,11 @@ class HRPermissionsTests(APITestCase):
 
         response = self.client.get(self.employees_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        results = data.get("results", [])
         # hr + manager + 2 employees = 4 profiles
-        self.assertEqual(len(response.data), 4)
+        self.assertEqual(len(results), 4)
 
     def test_employee_cannot_list_all_employees(self):
         access = self.login("teamemp@example.com", "EmpPass123!")
@@ -141,7 +150,9 @@ class HRPermissionsTests(APITestCase):
         # GET own profile
         response_get = self.client.get(self.employee_me_url)
         self.assertEqual(response_get.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_get.data["user"]["email"], "teamemp@example.com")
+        envelope = response_get.data
+        data = envelope.get("data", envelope)
+        self.assertEqual(data["user"]["email"], "teamemp@example.com")
 
         # PATCH allowed fields
         response_patch = self.client.patch(
@@ -150,7 +161,9 @@ class HRPermissionsTests(APITestCase):
             format="json",
         )
         self.assertEqual(response_patch.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_patch.data["phone_number"], "+212600000000")
+        envelope_patch = response_patch.data
+        data_patch = envelope_patch.get("data", envelope_patch)
+        self.assertEqual(data_patch["phone_number"], "+212600000000")
 
     def test_manager_my_team_returns_only_direct_reports(self):
         access = self.login("manager@example.com", "ManagerPass123!")
@@ -158,8 +171,10 @@ class HRPermissionsTests(APITestCase):
 
         response = self.client.get(self.my_team_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        emails = [item["user"]["email"] for item in response.data]
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        results = data.get("results", [])
+        emails = [item["user"]["email"] for item in results]
         self.assertIn("teamemp@example.com", emails)
         self.assertNotIn("otheremp@example.com", emails)
         self.assertNotIn("hr@example.com", emails)
@@ -172,6 +187,8 @@ class HRPermissionsTests(APITestCase):
         url_team = f"/api/hr/employees/{self.team_emp_profile.id}/"
         response_team = self.client.get(url_team)
         self.assertEqual(response_team.status_code, status.HTTP_200_OK)
+        env_team = response_team.data
+        data_team = env_team.get("data", env_team)
 
         # non-team employee → forbidden
         url_other = f"/api/hr/employees/{self.other_emp_profile.id}/"
@@ -185,4 +202,6 @@ class HRPermissionsTests(APITestCase):
         url = f"/api/hr/employees/{self.other_emp_profile.id}/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["user"]["email"], "otheremp@example.com")
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        self.assertEqual(data["user"]["email"], "otheremp@example.com")

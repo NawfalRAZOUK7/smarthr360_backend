@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',  # ⬅️ NEW
+    'drf_spectacular',  # OpenAPI documentation
 
     # Local apps
     'accounts',
@@ -147,15 +148,35 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    # Must be a class or import string, not a tuple/list
+    "DEFAULT_PAGINATION_CLASS": "smarthr360_backend.pagination.DefaultPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),  # Authorization: Bearer <token>
-    "BLACKLIST_AFTER_ROTATION": False,  # we’re using manual logout, not rotation
+    "AUTH_HEADER_TYPES": ("Bearer",), # Authorization: Bearer <token>
+    "BLACKLIST_AFTER_ROTATION": False, # we’re using manual logout, not rotation
 }
 
 # Development email backend: prints emails to the console
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "no-reply@smarthr360.local"
+
+# DRF Spectacular configuration for API documentation
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SmartHR360 API",
+    "DESCRIPTION": "Comprehensive HR Management System with employee tracking, skills management, performance reviews, and wellbeing surveys",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+    },
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
+}
