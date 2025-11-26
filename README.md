@@ -85,8 +85,9 @@ SmartHR360 is a full-featured Human Resources Management System that handles emp
 
 - **Framework:** Django 5.2.8
 - **API:** Django REST Framework 3.16+
-- **Authentication:** JWT (djangorestframework-simplejwt)
+- **Authentication:** JWT (djangorestframework-simplejwt) with token rotation
 - **Documentation:** drf-spectacular (OpenAPI 3.0)
+- **Security:** django-cors-headers, python-decouple, dj-database-url
 - **Database:** SQLite (development) / PostgreSQL (production)
 - **Python:** 3.10+
 
@@ -129,13 +130,34 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Run Migrations
+### 4. Set Up Environment Variables
+
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit .env with your settings
+# At minimum, you need to set SECRET_KEY and DEBUG
+```
+
+**Quick Setup for Development:**
+
+```bash
+# Generate a SECRET_KEY
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+# Add it to your .env file along with:
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+### 5. Run Migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 5. Create Superuser
+### 6. Create Superuser
 
 ```bash
 python manage.py createsuperuser
@@ -149,43 +171,79 @@ Follow the prompts to create an admin account.
 
 ### Environment Variables
 
-For production, create a `.env` file in the project root:
+**All configuration is now managed through environment variables for security.**
+
+The project uses `.env` file for configuration. Copy `.env.example` to `.env` and customize:
+
+```bash
+cp .env.example .env
+```
+
+**Required Variables:**
 
 ```env
-SECRET_KEY=your-secret-key-here
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+# Django Settings
+SECRET_KEY=your-secret-key-here  # Generate with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+DEBUG=True  # Set to False in production
+ALLOWED_HOSTS=localhost,127.0.0.1  # Comma-separated list
 
-# Database (PostgreSQL example)
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=smarthr360
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=localhost
-DB_PORT=5432
+# Database
+DATABASE_URL=sqlite:///db.sqlite3  # Or postgresql://user:password@localhost:5432/dbname
 
 # Email Configuration
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend  # Use smtp.EmailBackend in production
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_USER=your-email@example.com
 EMAIL_HOST_PASSWORD=your-app-password
 DEFAULT_FROM_EMAIL=noreply@smarthr360.com
 
-# JWT Settings (optional - defaults are set)
-ACCESS_TOKEN_LIFETIME_MINUTES=30
-REFRESH_TOKEN_LIFETIME_DAYS=1
+# CORS (Frontend URLs)
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Security (Production)
+SECURE_SSL_REDIRECT=False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE=False  # Set to True in production
+CSRF_COOKIE_SECURE=False  # Set to True in production
+SECURE_HSTS_SECONDS=0  # Set to 31536000 in production
+SECURE_HSTS_INCLUDE_SUBDOMAINS=False  # Set to True in production
+SECURE_HSTS_PRELOAD=False  # Set to True in production
+
+# JWT Settings
+JWT_ACCESS_TOKEN_LIFETIME=15  # Minutes
+JWT_REFRESH_TOKEN_LIFETIME=7  # Days
+JWT_ROTATE_REFRESH_TOKENS=True
+JWT_BLACKLIST_AFTER_ROTATION=True
+
+# Admin Panel Security
+ADMIN_ENABLED=True  # Set to False to disable admin in production
+ADMIN_IP_WHITELIST=  # Comma-separated IPs (empty = allow all)
 ```
+
+**🔒 Security Notes:**
+
+- Never commit `.env` to version control (it's in `.gitignore`)
+- Generate a new `SECRET_KEY` for each environment
+- Set `DEBUG=False` in production
+- Enable HTTPS security settings in production
+- See `SECURITY.md` for complete production checklist
 
 ### Settings Configuration
 
 Key settings in `smarthr360_backend/settings.py`:
 
-- **INSTALLED_APPS:** Includes all necessary Django apps and third-party packages
-- **REST_FRAMEWORK:** Configured with JWT authentication and pagination
-- **SIMPLE_JWT:** Token lifetime and authentication settings
+- **Environment-based configuration:** All sensitive data loaded from `.env`
+- **CORS Headers:** Configured for frontend communication
+- **Security Middleware:** Admin IP whitelist, HTTPS enforcement
+- **REST_FRAMEWORK:** JWT authentication with pagination
+- **SIMPLE_JWT:** Token rotation and blacklisting enabled
 - **SPECTACULAR_SETTINGS:** API documentation configuration
+
+**📖 For detailed security configuration, see:**
+
+- `SECURITY.md` - Complete security guide and production checklist
+- `STEP_14_IMPLEMENTATION.md` - Security hardening details
 
 ---
 
