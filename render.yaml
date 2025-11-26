@@ -1,7 +1,7 @@
 services:
   - type: web
     name: smarthr360-api
-    env: python
+    runtime: python
     region: oregon
     plan: free
     branch: main
@@ -13,7 +13,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
-        value: False
+        value: "False"
       - key: ALLOWED_HOSTS
         sync: false
       - key: DATABASE_URL
@@ -27,9 +27,9 @@ services:
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
-        value: 587
+        value: "587"
       - key: EMAIL_USE_TLS
-        value: True
+        value: "True"
       - key: EMAIL_HOST_USER
         sync: false
       - key: EMAIL_HOST_PASSWORD
@@ -37,27 +37,27 @@ services:
       - key: DEFAULT_FROM_EMAIL
         sync: false
       - key: SECURE_SSL_REDIRECT
-        value: True
+        value: "True"
       - key: SESSION_COOKIE_SECURE
-        value: True
+        value: "True"
       - key: CSRF_COOKIE_SECURE
-        value: True
+        value: "True"
       - key: SECURE_HSTS_SECONDS
-        value: 31536000
+        value: "31536000"
       - key: SECURE_HSTS_INCLUDE_SUBDOMAINS
-        value: True
+        value: "True"
       - key: SECURE_HSTS_PRELOAD
-        value: True
+        value: "True"
       - key: JWT_ACCESS_TOKEN_LIFETIME
-        value: 15
+        value: "15"
       - key: JWT_REFRESH_TOKEN_LIFETIME
-        value: 7
+        value: "7"
       - key: JWT_ROTATE_REFRESH_TOKENS
-        value: True
+        value: "True"
       - key: JWT_BLACKLIST_AFTER_ROTATION
-        value: True
+        value: "True"
       - key: ADMIN_ENABLED
-        value: True
+        value: "True"
       - key: ADMIN_IP_WHITELIST
         sync: false
 
