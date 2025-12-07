@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
+from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
 from reviews.models import ReviewCycle, PerformanceReview
 
@@ -74,16 +75,7 @@ class ReviewPermissionTests(APITestCase):
         )
 
     def auth(self, email, password):
-        resp = self.client.post(
-            self.login_url,
-            {"email": email, "password": password},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.data.get("data", resp.data)
-        access = data.get("tokens", {}).get("access")
-        self.assertIsNotNone(access)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, email, password)
 
     def create_review_as_manager(self):
         self.auth("manager3@example.com", "ManagerPass123!")

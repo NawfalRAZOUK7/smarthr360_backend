@@ -1,16 +1,14 @@
 from django.test import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
 
 from accounts.models import User
+from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
 from wellbeing.models import WellbeingSurvey, SurveyQuestion, SurveyResponse
 
 
 class WellbeingModuleTests(TestCase):
     def setUp(self):
-        self.client = APIClient()
-
         # Users
         self.hr_user = User.objects.create_user(
             email="hr@example.com",
@@ -95,44 +93,10 @@ class WellbeingModuleTests(TestCase):
             if user == self.manager_user
             else "EmpPass123!"
         )
-
-        res = self.client.post(
-            "/api/auth/login/",
-            {"email": user.email, "password": password},
-            format="json",
-        )
-
-        if res.status_code != status.HTTP_200_OK:
-            self.fail(f"Login failed for {user.email}: {res.status_code}, {res.data}")
-
-        data = res.data
-        token = None
-
-        # Case 1: flat response { "access": "...", ... }
-        if isinstance(data, dict) and "access" in data:
-            token = data["access"]
-
-        # Case 2: flat but grouped tokens { "tokens": { "access": "..." } }
-        if token is None and isinstance(data, dict):
-            tokens = data.get("tokens")
-            if isinstance(tokens, dict):
-                token = tokens.get("access")
-
-        # Case 3: enveloped { "data": { "access": "..." } }
-        if token is None and isinstance(data, dict):
-            inner = data.get("data")
-            if isinstance(inner, dict):
-                if "access" in inner:
-                    token = inner["access"]
-                else:
-                    tokens = inner.get("tokens")
-                    if isinstance(tokens, dict):
-                        token = tokens.get("access")
-
-        if token is None:
-            self.fail(f"No access token in login response for {user.email}: {res.data}")
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        try:
+            authenticate(self.client, user.email, password)
+        except AssertionError as exc:
+            self.fail(str(exc))
 
     def test_employee_can_submit_anonymous_response(self):
         self.auth_as(self.emp1_user)
