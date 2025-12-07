@@ -1,10 +1,10 @@
+import json
+
 # wellbeing/views.py (UPDATED WITH ENVELOPE)
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
-
-import json
 
 from accounts.models import User
 from hr.models import EmployeeProfile

@@ -477,7 +477,10 @@ class GoalDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
         return _goals_queryset_for_user(self.request.user)
 
     def get_object(self):
-        goal = get_object_or_404(Goal.objects.select_related("employee__manager"), pk=self.kwargs.get(self.lookup_field or "pk"))
+        goal = get_object_or_404(
+            Goal.objects.select_related("employee__manager"),
+            pk=self.kwargs.get(self.lookup_field or "pk"),
+        )
         user = self.request.user
 
         if user.has_role(user.Role.HR, user.Role.ADMIN):
