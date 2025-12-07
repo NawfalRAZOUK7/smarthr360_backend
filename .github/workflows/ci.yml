@@ -134,7 +134,12 @@ jobs:
         run: |
           cd coverage-artifacts
           ls -R .
-          coverage combine coverage-data-*
+          files=$(find . -name ".coverage.*" -type f)
+          if [ -z "$files" ]; then
+            echo "No coverage files found"
+            exit 1
+          fi
+          coverage combine $files
           coverage xml -o ../coverage.xml
           coverage report -m --fail-under=80
 
