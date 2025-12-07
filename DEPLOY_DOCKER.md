@@ -8,6 +8,28 @@ Deploy SmartHR360 Backend to any VPS (DigitalOcean, AWS EC2, Linode, etc.) using
 
 ---
 
+## Compose Profiles (dev vs prod)
+
+- **Dev profile (runserver + bind mount)**
+
+  ```bash
+  docker compose --profile dev up --build
+  ```
+
+  Runs Django `runserver` on `localhost:8000` with live code reload (bind-mounts project into the container).
+
+- **Prod profile (gunicorn + collectstatic + nginx)**
+
+  ```bash
+  docker compose --profile prod up --build -d
+  ```
+
+  Runs migrations, collects static assets, serves via gunicorn behind nginx. Keep `.env` with `DEBUG=False` and production settings.
+
+- **SSL optionality**: nginx maps `80:80` and `443:443` by default. If you are not using SSL yet, remove/comment the `443:443` port and the `./ssl` volume in `nginx` service. When ready, place certificates in `./ssl` (or mount `/etc/letsencrypt`) and keep the `443` mapping.
+
+---
+
 ## Prerequisites
 
 - VPS with Ubuntu 20.04+ (2 GB RAM minimum, 4 GB recommended)

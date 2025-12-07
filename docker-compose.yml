@@ -1,5 +1,17 @@
 version: "3.8"
 
+x-web-base: &web-base
+  build: .
+  env_file:
+    - .env
+  environment:
+    - DATABASE_URL=postgresql://${DB_USER:-smarthr360_user}:${DB_PASSWORD:-changeme}@db:5432/${DB_NAME:-smarthr360}
+  depends_on:
+    db:
+      condition: service_healthy
+  networks:
+    - smarthr360_network
+
 services:
   db:
     image: postgres:15-alpine
@@ -19,13 +31,27 @@ services:
     networks:
       - smarthr360_network
 
-  web:
-    build: .
+  web-dev:
+    <<: *web-base
+    container_name: smarthr360_web_dev
+    profiles: ["dev"]
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+
+  web-prod:
+    <<: *web-base
     container_name: smarthr360_web
+    profiles: ["prod"]
     restart: unless-stopped
     command: >
-      sh -c "python manage.py migrate --no-input &&
-             python manage.py collectstatic --no-input &&
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
              gunicorn smarthr360_backend.wsgi:application
              --bind 0.0.0.0:8000
              --workers 4
@@ -33,35 +59,26 @@ services:
              --timeout 120
              --access-logfile -
              --error-logfile -"
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql://${DB_USER:-smarthr360_user}:${DB_PASSWORD:-changeme}@db:5432/${DB_NAME:-smarthr360}
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - smarthr360_network
     healthcheck:
       test:
         - CMD
         - python
         - -c
         - |
-            import sys
-            import urllib.request
-            import urllib.error
+          import sys
+          import urllib.request
+          import urllib.error
 
-            try:
-                resp = urllib.request.urlopen('http://localhost:8000/', timeout=5)
-                sys.exit(0 if resp.getcode() < 500 else 1)
-            except urllib.error.HTTPError as exc:
-                sys.exit(0 if exc.code < 500 else 1)
-            except Exception:
-                sys.exit(1)
+          try:
+              resp = urllib.request.urlopen('http://localhost:8000/', timeout=5)
+              sys.exit(0 if resp.getcode() < 500 else 1)
+          except urllib.error.HTTPError as exc:
+              sys.exit(0 if exc.code < 500 else 1)
+          except Exception:
+              sys.exit(1)
       interval: 30s
       timeout: 10s
       retries: 3
@@ -70,17 +87,18 @@ services:
   nginx:
     image: nginx:alpine
     container_name: smarthr360_nginx
+    profiles: ["prod"]
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+      - "443:443" # Remove or comment if SSL is not configured
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
-      - ./ssl:/etc/nginx/ssl:ro # Mount SSL certificates
+      - ./ssl:/etc/nginx/ssl:ro # Optional: mount SSL certificates when enabled
     depends_on:
-      - web
+      - web-prod
     networks:
       - smarthr360_network
     healthcheck:
