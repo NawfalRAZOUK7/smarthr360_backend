@@ -1,6 +1,5 @@
 from django.test import TestCase
 from django.utils import timezone
-from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import timedelta
 
@@ -11,13 +10,14 @@ from accounts.models import (
     LoginAttempt,
     LoginActivity,
 )
+from accounts.tests.helpers import DEFAULT_PASSWORD, api_client, create_user, login
 
 
 class AuthEdgeCaseTests(TestCase):
     def setUp(self):
-        self.client = APIClient()
-        self.password = "StrongPass123!"
-        self.user = User.objects.create_user(
+        self.client = api_client()
+        self.password = DEFAULT_PASSWORD
+        self.user = create_user(
             email="edge@example.com",
             password=self.password,
             first_name="Edge",
