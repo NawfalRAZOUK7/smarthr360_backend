@@ -24,6 +24,8 @@ SmartHR360 is a full-featured Human Resources Management System that handles emp
 
 ---
 
+📖 Looking for docs? See `docs/README.md` for the full documentation index (API, deployment, security, ops).
+
 ## ✨ Features
 
 ### 🔐 Authentication & Authorization
@@ -227,7 +229,7 @@ ADMIN_IP_WHITELIST=  # Comma-separated IPs (empty = allow all)
 - Generate a new `SECRET_KEY` for each environment
 - Set `DEBUG=False` in production
 - Enable HTTPS security settings in production
-- See `SECURITY.md` for complete production checklist
+- See `docs/security/SECURITY.md` for complete production checklist
 
 ### Settings Configuration
 
@@ -242,8 +244,8 @@ Key settings in `smarthr360_backend/settings.py`:
 
 **📖 For detailed security configuration, see:**
 
-- `SECURITY.md` - Complete security guide and production checklist
-- `STEP_14_IMPLEMENTATION.md` - Security hardening details
+- `docs/security/SECURITY.md` - Complete security guide and production checklist
+- `docs/security/STEP_14_IMPLEMENTATION.md` - Security hardening details
 
 ---
 

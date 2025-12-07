@@ -38,11 +38,10 @@ def login(client: APIClient, email: str, password: str, expect_success: bool = T
         {"email": email, "password": password},
         format="json",
     )
-    if expect_success:
-        if response.status_code != status.HTTP_200_OK:
-            raise AssertionError(
-                f"Login failed for {email}: {response.status_code} {response.data}"
-            )
+    if expect_success and response.status_code != status.HTTP_200_OK:
+        raise AssertionError(
+            f"Login failed for {email}: {response.status_code} {response.data}"
+        )
     return response
 
 

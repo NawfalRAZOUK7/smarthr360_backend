@@ -345,14 +345,15 @@ python manage.py check --deploy
    - Enable all HTTPS security settings
    - Update `CORS_ALLOWED_ORIGINS` to production domain
    - Set up production database
-   - Follow complete checklist in `SECURITY.md`
+
+- Follow complete checklist in `../security/SECURITY.md`
 
 ### Next Steps
 
 1. Continue development with current configuration ✅
 2. Test frontend integration with CORS settings ⏭️
 3. Test JWT refresh flow with token rotation ⏭️
-4. Review `SECURITY.md` for production deployment checklist ⏭️
+4. Review `../security/SECURITY.md` for production deployment checklist ⏭️
 
 ---
 

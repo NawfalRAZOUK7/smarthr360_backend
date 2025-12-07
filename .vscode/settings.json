@@ -1,4 +1,19 @@
 {
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./accounts",
+        "-p",
+        "test*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "python.testing.env": {
+        "DJANGO_SETTINGS_MODULE": "smarthr360_backend.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "python.testing.cwd": "${workspaceFolder}",
+    "python.envFile": "${workspaceFolder}/.env",
     "workbench.colorCustomizations": {
         "editorInfo.foreground": "#0080ff6a"
     }

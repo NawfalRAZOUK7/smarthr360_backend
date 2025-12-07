@@ -155,6 +155,12 @@ Created `POSTMAN_GUIDE.md` with:
 7. ✅ `reviews/schemas.py` - Review endpoint schemas
 8. ✅ `wellbeing/schemas.py` - Wellbeing endpoint schemas
 
+🗂️ Current locations after doc reorg:
+
+- `docs/api/POSTMAN_GUIDE.md`
+- `docs/api/API_DOCUMENTATION.md`
+- `docs/api/SmartHR360_API.postman_collection.json`
+
 ### Modified Files:
 
 1. ✅ `requirements.txt` - Added drf-spectacular
