@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
+from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
 
 
@@ -113,22 +114,7 @@ class EmployeeFiltersTests(APITestCase):
 
     # Small helper, same spirit as in other tests
     def auth_as(self, user, password):
-        res = self.client.post(
-            self.login_url,
-            {"email": user.email, "password": password},
-            format="json",
-        )
-        # should be okay for valid creds
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        # Envelope-aware
-        envelope = res.data
-        data = envelope.get("data", envelope)
-        tokens = data.get("tokens", {})
-        access = tokens.get("access")
-        self.assertIsNotNone(access)
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, user.email, password)
 
     def test_filter_by_department_code(self):
         """

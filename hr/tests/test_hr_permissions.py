@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
+from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
 
 
@@ -107,26 +108,10 @@ class HRPermissionsTests(APITestCase):
 
     # ---------- Helpers ----------
 
-    def login(self, email, password):
-        response = self.client.post(
-            self.login_url,
-            {"email": email, "password": password},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Envelope-aware
-        envelope = response.data
-        data = envelope.get("data", envelope)
-        tokens = data.get("tokens", {})
-        access = tokens.get("access")
-        self.assertIsNotNone(access, f"No access token in login response: {response.data}")
-        return access
-
     # ---------- Tests ----------
 
     def test_hr_can_list_all_employees(self):
-        access = self.login("hr@example.com", "HrPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "hr@example.com", "HrPass123!")
 
         response = self.client.get(self.employees_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -137,15 +122,13 @@ class HRPermissionsTests(APITestCase):
         self.assertEqual(len(results), 4)
 
     def test_employee_cannot_list_all_employees(self):
-        access = self.login("teamemp@example.com", "EmpPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "teamemp@example.com", "EmpPass123!")
 
         response = self.client.get(self.employees_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_employee_me_get_and_patch(self):
-        access = self.login("teamemp@example.com", "EmpPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "teamemp@example.com", "EmpPass123!")
 
         # GET own profile
         response_get = self.client.get(self.employee_me_url)
@@ -166,8 +149,7 @@ class HRPermissionsTests(APITestCase):
         self.assertEqual(data_patch["phone_number"], "+212600000000")
 
     def test_manager_my_team_returns_only_direct_reports(self):
-        access = self.login("manager@example.com", "ManagerPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "manager@example.com", "ManagerPass123!")
 
         response = self.client.get(self.my_team_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -180,8 +162,7 @@ class HRPermissionsTests(APITestCase):
         self.assertNotIn("hr@example.com", emails)
 
     def test_manager_can_access_team_member_but_not_other_employee(self):
-        access = self.login("manager@example.com", "ManagerPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "manager@example.com", "ManagerPass123!")
 
         # team member → allowed
         url_team = f"/api/hr/employees/{self.team_emp_profile.id}/"
@@ -196,8 +177,7 @@ class HRPermissionsTests(APITestCase):
         self.assertEqual(response_other.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_hr_can_access_any_employee_detail(self):
-        access = self.login("hr@example.com", "HrPass123!")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        authenticate(self.client, "hr@example.com", "HrPass123!")
 
         url = f"/api/hr/employees/{self.other_emp_profile.id}/"
         response = self.client.get(url)

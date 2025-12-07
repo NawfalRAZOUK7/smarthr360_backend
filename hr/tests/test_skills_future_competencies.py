@@ -1,15 +1,13 @@
 from django.test import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
 
 from accounts.models import User
+from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
 
 
 class SkillsFutureCompetenciesTests(TestCase):
     def setUp(self):
-        self.client = APIClient()
-
         # Users
         self.hr_user = User.objects.create_user(
             email="hr@example.com",
@@ -87,25 +85,10 @@ class SkillsFutureCompetenciesTests(TestCase):
             else "EmpPass123!"
         )
 
-        res = self.client.post(
-            "/api/auth/login/",
-            {"email": user.email, "password": password},
-            format="json",
-        )
-
-        if res.status_code != status.HTTP_200_OK:
-            self.fail(f"Login failed for {user.email}: {res.status_code}, {res.data}")
-
-        # Envelope-aware: {"data": {"tokens": {"access": "..."}}, "meta": {...}}
-        envelope = res.data
-        data = envelope.get("data", envelope)
-        tokens = data.get("tokens") or {}
-        token = tokens.get("access")
-
-        if token is None:
-            self.fail(f"No access token in login response for {user.email}: {res.data}")
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        try:
+            authenticate(self.client, user.email, password)
+        except AssertionError as exc:
+            self.fail(str(exc))
 
     # --- Skills ---
 

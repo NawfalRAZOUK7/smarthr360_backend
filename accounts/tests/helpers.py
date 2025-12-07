@@ -54,3 +54,13 @@ def extract_tokens(response):
     access = tokens.get("access") or data.get("access")
     refresh = tokens.get("refresh") or data.get("refresh")
     return access, refresh
+
+
+def authenticate(client: APIClient, email: str, password: str) -> str:
+    """Login and set Authorization header; returns access token."""
+    response = login(client, email, password, expect_success=True)
+    access, _ = extract_tokens(response)
+    if not access:
+        raise AssertionError(f"No access token for {email}: {response.status_code} {response.data}")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    return access
