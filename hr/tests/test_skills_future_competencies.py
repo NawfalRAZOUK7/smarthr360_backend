@@ -3,7 +3,7 @@ from rest_framework import status
 
 from accounts.models import User
 from accounts.tests.helpers import authenticate
-from hr.models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
+from hr.models import Department, EmployeeProfile, EmployeeSkill, Skill
 
 
 class SkillsFutureCompetenciesTests(TestCase):

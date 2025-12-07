@@ -1,16 +1,17 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
-from datetime import timedelta
 
 from accounts.models import (
-    User,
     EmailVerificationToken,
-    PasswordResetToken,
-    LoginAttempt,
     LoginActivity,
+    LoginAttempt,
+    PasswordResetToken,
+    User,
 )
-from accounts.tests.helpers import DEFAULT_PASSWORD, api_client, create_user, login
+from accounts.tests.helpers import DEFAULT_PASSWORD, api_client, create_user
 
 
 class AuthEdgeCaseTests(TestCase):
@@ -75,7 +76,7 @@ class AuthEdgeCaseTests(TestCase):
             {"email": self.user.email},
             format="json",
         )
-        resp2 = self.client.post(
+        self.client.post(
             "/api/auth/email/verify/",
             {"email": self.user.email},
             format="json",

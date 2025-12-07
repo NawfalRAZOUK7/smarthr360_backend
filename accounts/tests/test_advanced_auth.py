@@ -2,11 +2,11 @@ from django.test import TestCase
 from rest_framework import status
 
 from accounts.models import (
-    User,
-    PasswordResetToken,
     EmailVerificationToken,
-    LoginAttempt,
     LoginActivity,
+    LoginAttempt,
+    PasswordResetToken,
+    User,
 )
 from accounts.tests.helpers import DEFAULT_PASSWORD, api_client, create_user, login
 

@@ -3,15 +3,15 @@
 OpenAPI schema extensions for review endpoints.
 """
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .serializers import (
-    ReviewCycleSerializer,
-    PerformanceReviewSerializer,
-    ReviewItemSerializer,
-    GoalSerializer,
-)
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiResponse, extend_schema
 
+from .serializers import (
+    GoalSerializer,
+    PerformanceReviewSerializer,
+    ReviewCycleSerializer,
+    ReviewItemSerializer,
+)
 
 # Review Cycle schemas
 review_cycle_list_create_schema = extend_schema(
@@ -48,17 +48,23 @@ review_cycle_detail_schema = extend_schema(
 # Performance Review schemas
 performance_review_list_create_schema = extend_schema(
     summary="List or create performance reviews",
-    description="""
-    GET: List reviews based on role:
-    - HR/Admin: All reviews
-    - Manager: Reviews for their team
-    - Employee: Own reviews only
-    
-    POST: Create new review (Manager/HR/Admin only)
-    """,
+        description=(
+            "GET: List reviews based on role:\n"
+            "- HR/Admin: All reviews\n"
+            "- Manager: Reviews for their team\n"
+            "- Employee: Own reviews only\n"
+            "\n"
+            "POST: Create new review (Manager/HR/Admin only)"
+        ),
     responses={
-        200: OpenApiResponse(description="List of performance reviews", response=PerformanceReviewSerializer(many=True)),
-        201: OpenApiResponse(description="Performance review created", response=PerformanceReviewSerializer),
+        200: OpenApiResponse(
+            description="List of performance reviews",
+            response=PerformanceReviewSerializer(many=True),
+        ),
+        201: OpenApiResponse(
+            description="Performance review created",
+            response=PerformanceReviewSerializer,
+        ),
     },
     tags=["Performance Reviews"],
 )
@@ -76,7 +82,10 @@ performance_review_detail_schema = extend_schema(
 # Review submission schemas
 submit_review_schema = extend_schema(
     summary="Submit performance review",
-    description="Submit a review for evaluation. Changes status to SUBMITTED.",
+        description=(
+            "Submit a review for evaluation. Changes status to "
+            "SUBMITTED."
+        ),
     request=None,
     responses={
         200: OpenApiResponse(description="Review submitted successfully", response=PerformanceReviewSerializer),
@@ -87,7 +96,9 @@ submit_review_schema = extend_schema(
 
 approve_review_schema = extend_schema(
     summary="Approve performance review",
-    description="Approve a submitted review. Requires HR/Admin role.",
+        description=(
+            "Approve a submitted review. Requires HR/Admin role."
+        ),
     request=None,
     responses={
         200: OpenApiResponse(description="Review approved successfully", response=PerformanceReviewSerializer),
@@ -100,7 +111,9 @@ approve_review_schema = extend_schema(
 # Review Item schemas
 review_item_list_schema = extend_schema(
     summary="List review items",
-    description="List all items/ratings for a specific performance review.",
+        description=(
+            "List all items/ratings for a specific performance review."
+        ),
     parameters=[
         OpenApiParameter(
             name="review_id",

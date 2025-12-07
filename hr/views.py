@@ -1,23 +1,23 @@
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError, PermissionDenied
-from django.utils import timezone
 
-from smarthr360_backend.api_mixins import ApiResponseMixin
-from accounts.permissions import IsHRRole, IsManagerOrAbove, EmployeeProfileAccessPermission
 from accounts.models import User
-from .models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
+from accounts.permissions import EmployeeProfileAccessPermission, IsHRRole, IsManagerOrAbove
+from smarthr360_backend.api_mixins import ApiResponseMixin
+
+from .models import Department, EmployeeProfile, EmployeeSkill, FutureCompetency, Skill
 from .serializers import (
     DepartmentSerializer,
     EmployeeProfileSerializer,
     EmployeeSelfUpdateSerializer,
-    SkillSerializer,
     EmployeeSkillSerializer,
     FutureCompetencySerializer,
+    SkillSerializer,
 )
-
 
 # --------------------------------------------------------------------------------------
 #   DEPARTMENTS

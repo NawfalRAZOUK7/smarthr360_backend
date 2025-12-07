@@ -1,12 +1,12 @@
+import uuid
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from django.conf import settings
-from django.utils import timezone
-from datetime import timedelta
-import uuid
-
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):

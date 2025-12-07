@@ -1,7 +1,8 @@
-from pathlib import Path
 from datetime import timedelta
-from decouple import config, Csv
+from pathlib import Path
+
 import dj_database_url
+from decouple import Csv, config
 
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -133,8 +134,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=15, cast=int)),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=config('JWT_REFRESH_TOKEN_LIFETIME', default=7, cast=int)),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=15, cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=config('JWT_REFRESH_TOKEN_LIFETIME', default=7, cast=int)
+    ),
     "ROTATE_REFRESH_TOKENS": config('JWT_ROTATE_REFRESH_TOKENS', default=True, cast=bool),
     "BLACKLIST_AFTER_ROTATION": config('JWT_BLACKLIST_AFTER_ROTATION', default=True, cast=bool),
     "AUTH_HEADER_TYPES": ("Bearer",),
@@ -183,7 +188,10 @@ ADMIN_IP_WHITELIST = config('ADMIN_IP_WHITELIST', default='', cast=Csv())
 # DRF Spectacular configuration for API documentation
 SPECTACULAR_SETTINGS = {
     "TITLE": "SmartHR360 API",
-    "DESCRIPTION": "Comprehensive HR Management System with employee tracking, skills management, performance reviews, and wellbeing surveys",
+    "DESCRIPTION": (
+        "Comprehensive HR Management System with employee tracking, skills management, "
+        "performance reviews, and wellbeing surveys"
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": "/api/",

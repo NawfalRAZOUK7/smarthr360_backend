@@ -1,7 +1,7 @@
 # reviews/serializers.py
 from rest_framework import serializers
 
-from .models import ReviewCycle, PerformanceReview, ReviewItem, Goal
+from .models import Goal, PerformanceReview, ReviewCycle, ReviewItem
 
 
 class ReviewCycleSerializer(serializers.ModelSerializer):

@@ -168,8 +168,6 @@ class HRPermissionsTests(APITestCase):
         url_team = f"/api/hr/employees/{self.team_emp_profile.id}/"
         response_team = self.client.get(url_team)
         self.assertEqual(response_team.status_code, status.HTTP_200_OK)
-        env_team = response_team.data
-        data_team = env_team.get("data", env_team)
 
         # non-team employee → forbidden
         url_other = f"/api/hr/employees/{self.other_emp_profile.id}/"

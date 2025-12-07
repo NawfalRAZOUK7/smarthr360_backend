@@ -4,7 +4,7 @@ from rest_framework import status
 from accounts.models import User
 from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
-from wellbeing.models import WellbeingSurvey, SurveyQuestion, SurveyResponse
+from wellbeing.models import SurveyQuestion, SurveyResponse, WellbeingSurvey
 
 
 class WellbeingModuleTests(TestCase):

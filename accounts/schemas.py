@@ -3,25 +3,27 @@
 OpenAPI schema extensions for authentication endpoints.
 """
 
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
-from .serializers import (
-    UserSerializer,
-    RegisterSerializer,
-    LoginSerializer,
-    ChangePasswordSerializer,
-    LogoutSerializer,
-    RequestPasswordResetSerializer,
-    PasswordResetSerializer,
-    RequestEmailVerificationSerializer,
-    EmailVerificationSerializer,
-)
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 
+from .serializers import (
+    ChangePasswordSerializer,
+    EmailVerificationSerializer,
+    LoginSerializer,
+    LogoutSerializer,
+    PasswordResetSerializer,
+    RegisterSerializer,
+    RequestEmailVerificationSerializer,
+    RequestPasswordResetSerializer,
+    UserSerializer,
+)
 
 # Register endpoint schemas
 register_schema = extend_schema(
     summary="Register a new user",
-    description="Create a new user account. Returns user data and JWT tokens upon successful registration.",
+    description=(
+        "Create a new user account. Returns user data and JWT tokens upon successful "
+        "registration."
+    ),
     request=RegisterSerializer,
     responses={
         201: OpenApiResponse(
@@ -49,7 +51,9 @@ register_schema = extend_schema(
 # Login endpoint schemas
 login_schema = extend_schema(
     summary="User login",
-    description="Authenticate user and receive JWT tokens. Returns user data and access/refresh tokens.",
+    description=(
+        "Authenticate user and receive JWT tokens. Returns user data and access/refresh tokens."
+    ),
     request=LoginSerializer,
     responses={
         200: OpenApiResponse(

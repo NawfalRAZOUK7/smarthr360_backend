@@ -1,18 +1,18 @@
 from django.urls import path
 
 from .views import (
-    DepartmentListCreateView,
     DepartmentDetailView,
-    EmployeeMeView,
-    EmployeeListCreateView,
+    DepartmentListCreateView,
     EmployeeDetailView,
-    MyTeamListView,
-    SkillListCreateView,
-    SkillDetailView,
-    EmployeeSkillListCreateView,
+    EmployeeListCreateView,
+    EmployeeMeView,
     EmployeeSkillDetailView,
-    FutureCompetencyListCreateView,
+    EmployeeSkillListCreateView,
     FutureCompetencyDetailView,
+    FutureCompetencyListCreateView,
+    MyTeamListView,
+    SkillDetailView,
+    SkillListCreateView,
 )
 
 urlpatterns = [

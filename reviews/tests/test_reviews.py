@@ -4,7 +4,7 @@ from rest_framework import status
 from accounts.models import User
 from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
-from reviews.models import ReviewCycle, PerformanceReview
+from reviews.models import PerformanceReview, ReviewCycle
 
 
 class ReviewsModuleTests(TestCase):

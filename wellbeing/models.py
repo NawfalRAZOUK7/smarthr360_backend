@@ -1,9 +1,10 @@
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
 import uuid
 
+from django.conf import settings
+from django.db import models
+
 from hr.models import Department
+
 
 class WellbeingSurvey(models.Model):
     """

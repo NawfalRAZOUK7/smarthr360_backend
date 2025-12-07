@@ -1,7 +1,8 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+
+from hr.models import EmployeeProfile  # add this import at the top of the file
 
 from .models import User
-from hr.models import EmployeeProfile  # add this import at the top of the file
 
 
 class IsAdminRole(BasePermission):

@@ -2,16 +2,16 @@
 from django.urls import path
 
 from .views import (
-    ReviewCycleListCreateView,
-    ReviewCycleDetailView,
-    PerformanceReviewListCreateView,
-    PerformanceReviewDetailView,
-    PerformanceReviewSubmitView,
-    PerformanceReviewAcknowledgeView,
-    ReviewItemListCreateView,
-    ReviewItemDetailView,
-    GoalListCreateView,
     GoalDetailView,
+    GoalListCreateView,
+    PerformanceReviewAcknowledgeView,
+    PerformanceReviewDetailView,
+    PerformanceReviewListCreateView,
+    PerformanceReviewSubmitView,
+    ReviewCycleDetailView,
+    ReviewCycleListCreateView,
+    ReviewItemDetailView,
+    ReviewItemListCreateView,
 )
 
 urlpatterns = [

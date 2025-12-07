@@ -1,20 +1,20 @@
 # wellbeing/views.py (UPDATED WITH ENVELOPE)
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
 from accounts.models import User
 from hr.models import EmployeeProfile
 from smarthr360_backend.api_mixins import ApiResponseMixin
-from .models import WellbeingSurvey, SurveyQuestion, SurveyResponse
+
+from .models import SurveyQuestion, SurveyResponse, WellbeingSurvey
 from .serializers import (
-    WellbeingSurveySerializer,
     SurveyQuestionSerializer,
-    SurveySubmissionSerializer,
     SurveyStatsSerializer,
+    SurveySubmissionSerializer,
     TeamStatsSerializer,
+    WellbeingSurveySerializer,
 )
 
 
@@ -137,7 +137,7 @@ class SurveyStatsView(ApiResponseMixin, APIView):
                         if 1 <= n <= 5:
                             nums.append(n)
                             dist[str(n)] += 1
-                    except:
+                    except Exception:
                         continue
                 q_data["avg"] = sum(nums) / len(nums) if nums else None
                 q_data["distribution"] = dist
@@ -205,7 +205,7 @@ class TeamStatsView(ApiResponseMixin, APIView):
                         n = int(r.answers[qid])
                         if 1 <= n <= 5:
                             nums.append(n)
-                    except:
+                    except Exception:
                         continue
             aggregates[qid] = sum(nums) / len(nums) if nums else None
 

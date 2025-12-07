@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 from accounts.models import User
 from accounts.tests.helpers import authenticate
 from hr.models import Department, EmployeeProfile
-from reviews.models import ReviewCycle, PerformanceReview
+from reviews.models import PerformanceReview, ReviewCycle
 
 
 class ReviewPermissionTests(APITestCase):
@@ -91,7 +91,9 @@ class ReviewPermissionTests(APITestCase):
     def test_employee_cannot_submit_review(self):
         review_id = self.create_review_as_manager()
         self.auth("emp20@example.com", "EmpPass123!")
-        resp = self.client.post(self.submit_url(review_id), {"manager_comment": "Try"}, format="json")
+        resp = self.client.post(
+            self.submit_url(review_id), {"manager_comment": "Try"}, format="json"
+        )
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_manager_cannot_submit_non_draft_review(self):
@@ -101,7 +103,9 @@ class ReviewPermissionTests(APITestCase):
         review.save(update_fields=["status"])
 
         self.auth("manager3@example.com", "ManagerPass123!")
-        resp = self.client.post(self.submit_url(review_id), {"manager_comment": "Again"}, format="json")
+        resp = self.client.post(
+            self.submit_url(review_id), {"manager_comment": "Again"}, format="json"
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_cannot_add_items_when_not_draft(self):
@@ -155,7 +159,11 @@ class ReviewPermissionTests(APITestCase):
     def test_employee_cannot_acknowledge_non_submitted(self):
         review_id = self.create_review_as_manager()
         self.auth("emp20@example.com", "EmpPass123!")
-        resp = self.client.post(f"{self.reviews_url}{review_id}/acknowledge/", {"employee_comment": "ok"}, format="json")
+        resp = self.client.post(
+            f"{self.reviews_url}{review_id}/acknowledge/",
+            {"employee_comment": "ok"},
+            format="json",
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_manager_cannot_submit_completed_review(self):
@@ -165,7 +173,9 @@ class ReviewPermissionTests(APITestCase):
         review.save(update_fields=["status"])
 
         self.auth("manager3@example.com", "ManagerPass123!")
-        resp = self.client.post(self.submit_url(review_id), {"manager_comment": "again"}, format="json")
+        resp = self.client.post(
+            self.submit_url(review_id), {"manager_comment": "again"}, format="json"
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_employee_cannot_update_someone_elses_goal(self):
@@ -185,7 +195,7 @@ class ReviewPermissionTests(APITestCase):
         goal_id = resp_goal.data.get("data", resp_goal.data)["id"]
 
         # Other employee tries to update
-        other_emp = User.objects.create_user(
+        User.objects.create_user(
             email="emp21@example.com",
             password="EmpPass123!",
             role=User.Role.EMPLOYEE,

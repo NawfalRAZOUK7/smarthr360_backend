@@ -7,30 +7,30 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from smarthr360_backend.api_mixins import ApiResponseMixin
 
-from .models import User, LoginActivity
-from .serializers import (
-    UserSerializer,
-    RegisterSerializer,
-    LoginSerializer,
-    ChangePasswordSerializer,
-    LogoutSerializer,
-    RequestPasswordResetSerializer,
-    PasswordResetSerializer,
-    RequestEmailVerificationSerializer,
-    EmailVerificationSerializer,
-)
+from .models import LoginActivity, User
 from .permissions import IsHRRole
 from .schemas import (
-    register_schema,
-    login_schema,
     change_password_schema,
+    email_verification_schema,
+    login_schema,
     logout_schema,
     me_schema,
-    user_list_schema,
-    request_password_reset_schema,
     password_reset_schema,
+    register_schema,
     request_email_verification_schema,
-    email_verification_schema,
+    request_password_reset_schema,
+    user_list_schema,
+)
+from .serializers import (
+    ChangePasswordSerializer,
+    EmailVerificationSerializer,
+    LoginSerializer,
+    LogoutSerializer,
+    PasswordResetSerializer,
+    RegisterSerializer,
+    RequestEmailVerificationSerializer,
+    RequestPasswordResetSerializer,
+    UserSerializer,
 )
 
 
@@ -155,7 +155,10 @@ class RequestEmailVerificationView(ApiResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = RequestEmailVerificationSerializer(data=request.data, context={"request": request})
+        serializer = RequestEmailVerificationSerializer(
+            data=request.data,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
         token_obj = serializer.save()
 

@@ -3,17 +3,17 @@
 OpenAPI schema extensions for HR endpoints.
 """
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiResponse, extend_schema
+
 from .serializers import (
     DepartmentSerializer,
     EmployeeProfileSerializer,
     EmployeeSelfUpdateSerializer,
-    SkillSerializer,
     EmployeeSkillSerializer,
     FutureCompetencySerializer,
+    SkillSerializer,
 )
-
 
 # Department schemas
 department_list_create_schema = extend_schema(

@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.http import HttpResponseForbidden
-from django.urls import reverse
 
 
 class AdminIPWhitelistMiddleware:
@@ -31,7 +30,10 @@ class AdminIPWhitelistMiddleware:
                 client_ip = self.get_client_ip(request)
                 if client_ip not in self.whitelist:
                     return HttpResponseForbidden(
-                        f'Access denied. Your IP ({client_ip}) is not authorized to access the admin panel.'
+                        (
+                            "Access denied. Your IP "
+                            f"({client_ip}) is not authorized to access the admin panel."
+                        )
                     )
         
         return self.get_response(request)

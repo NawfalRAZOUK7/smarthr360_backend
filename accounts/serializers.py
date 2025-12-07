@@ -1,19 +1,17 @@
-from django.contrib.auth import authenticate
-from rest_framework import serializers
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
+from rest_framework import exceptions, serializers
+
 # + the new import we just added:
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from rest_framework import exceptions
-
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils import timezone
 
 from .models import (
-    User,
-    PasswordResetToken,
     EmailVerificationToken,
-    LoginAttempt,
     LoginActivity,
+    LoginAttempt,
+    PasswordResetToken,
+    User,
 )
 
 
@@ -87,7 +85,7 @@ class LoginSerializer(serializers.Serializer):
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             # optional: we don't log here since we don't have a user FK
-            raise serializers.ValidationError("Identifiants invalides.")
+            raise serializers.ValidationError("Identifiants invalides.") from None
 
         # Ensure a LoginAttempt exists
         attempt, _ = LoginAttempt.objects.get_or_create(user=user)
@@ -154,8 +152,9 @@ class LoginSerializer(serializers.Serializer):
                             "Bonjour,\n\n"
                             "Votre compte a été temporairement verrouillé en raison de plusieurs "
                             "tentatives de connexion échouées.\n\n"
-                            "Si vous n'êtes pas à l'origine de ces tentatives, nous vous conseillons "
-                            "de contacter l'administrateur ou de réinitialiser votre mot de passe.\n\n"
+                            "Si vous n'êtes pas à l'origine de ces tentatives, nous vous "
+                            "conseillons de contacter l'administrateur ou de réinitialiser votre "
+                            "mot de passe.\n\n"
                             "Cordialement,\nL'équipe SmartHR360"
                         ),
                         from_email=settings.DEFAULT_FROM_EMAIL,
@@ -228,7 +227,7 @@ class LogoutSerializer(serializers.Serializer):
             token = RefreshToken(self.token)
             token.blacklist()
         except TokenError:
-            raise exceptions.ValidationError("Token invalide ou déjà blacklisté.")
+            raise exceptions.ValidationError("Token invalide ou déjà blacklisté.") from None
 
 
 class RequestPasswordResetSerializer(serializers.Serializer):
@@ -239,7 +238,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
             user = User.objects.get(email=value)
         except User.DoesNotExist:
             # generic error (you could also silently succeed)
-            raise serializers.ValidationError("Aucun utilisateur avec cet email.")
+            raise serializers.ValidationError("Aucun utilisateur avec cet email.") from None
         self.context["user"] = user
         return value
 
@@ -278,7 +277,7 @@ class PasswordResetSerializer(serializers.Serializer):
                 token=token_value
             )
         except PasswordResetToken.DoesNotExist:
-            raise serializers.ValidationError({"token": "Token invalide."})
+            raise serializers.ValidationError({"token": "Token invalide."}) from None
 
         if token_obj.is_used:
             raise serializers.ValidationError({"token": "Ce token a déjà été utilisé."})
@@ -309,7 +308,7 @@ class RequestEmailVerificationSerializer(serializers.Serializer):
             user = User.objects.get(email=value)
         except User.DoesNotExist:
             # generic response: do not leak existence
-            raise serializers.ValidationError("Aucun utilisateur avec cet email.")
+            raise serializers.ValidationError("Aucun utilisateur avec cet email.") from None
 
         if user.is_email_verified:
             raise serializers.ValidationError("Cet email est déjà vérifié.")
@@ -350,7 +349,7 @@ class EmailVerificationSerializer(serializers.Serializer):
                 token=token_value
             )
         except EmailVerificationToken.DoesNotExist:
-            raise serializers.ValidationError({"token": "Token invalide."})
+            raise serializers.ValidationError({"token": "Token invalide."}) from None
 
         if token_obj.is_used:
             raise serializers.ValidationError({"token": "Ce token a déjà été utilisé."})

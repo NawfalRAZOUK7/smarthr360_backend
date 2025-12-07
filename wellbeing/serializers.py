@@ -1,8 +1,8 @@
 # wellbeing/serializers.py
 from rest_framework import serializers
-from django.db.models import Avg, Count
-from hr.models import EmployeeProfile
-from .models import WellbeingSurvey, SurveyQuestion, SurveyResponse
+
+from .models import SurveyQuestion, WellbeingSurvey
+
 
 class SurveyQuestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -67,9 +67,7 @@ class SurveySubmissionSerializer(serializers.Serializer):
                 try:
                     num = int(value)
                 except ValueError:
-                    raise serializers.ValidationError(
-                        {qid: "Expected a number 1–5."}
-                    )
+                        raise serializers.ValidationError({qid: "Expected a number 1–5."}) from None
                 if num < 1 or num > 5:
                     raise serializers.ValidationError(
                         {qid: "Scale answer must be between 1 and 5."}

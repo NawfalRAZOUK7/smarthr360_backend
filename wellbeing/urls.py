@@ -1,13 +1,13 @@
 from django.urls import path
 
 from .views import (
-    WellbeingSurveyListCreateView,
-    WellbeingSurveyDetailView,
-    SurveyQuestionListCreateView,
     SurveyQuestionDetailView,
-    SurveySubmitView,
+    SurveyQuestionListCreateView,
     SurveyStatsView,
+    SurveySubmitView,
     TeamStatsView,
+    WellbeingSurveyDetailView,
+    WellbeingSurveyListCreateView,
 )
 
 urlpatterns = [

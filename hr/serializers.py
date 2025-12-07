@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from .models import Department, EmployeeProfile, Skill, EmployeeSkill, FutureCompetency
 from accounts.serializers import UserSerializer
+
+from .models import Department, EmployeeProfile, EmployeeSkill, FutureCompetency, Skill
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
