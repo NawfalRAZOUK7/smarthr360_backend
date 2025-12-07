@@ -50,12 +50,10 @@ jobs:
         run: python manage.py check --deploy --fail-level ERROR
 
       - name: Run tests with coverage
-        env:
-          COVERAGE_FILE: .coverage.${{ matrix.python-version }}
         run: |
-          coverage run manage.py test
-          coverage xml -o coverage.xml
-          coverage report -m
+          coverage run --data-file=.coverage.${{ matrix.python-version }} manage.py test
+          coverage xml --data-file=.coverage.${{ matrix.python-version }} -o coverage.xml
+          coverage report --data-file=.coverage.${{ matrix.python-version }} -m
 
       - name: Upload coverage artifact
         if: always()
