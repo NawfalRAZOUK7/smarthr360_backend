@@ -133,7 +133,7 @@ class RequestPasswordResetView(ApiResponseMixin, APIView):
         data = {"detail": "Si un compte existe, un lien de réinitialisation a été envoyé."}
 
         from django.conf import settings as dj_settings
-        if dj_settings.DEBUG:
+        if dj_settings.DEBUG and token_obj is not None:
             data["debug_token"] = token_obj.token
 
         return Response(data, status=200)

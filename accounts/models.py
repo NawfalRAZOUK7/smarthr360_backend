@@ -70,11 +70,11 @@ class User(AbstractUser):
 
     # ⬇️ add these helper methods/properties
 
-    ROLE_HIERARCHY = {
-        Role.EMPLOYEE: 1,
-        Role.MANAGER: 2,
-        Role.HR: 3,
-        Role.ADMIN: 4,
+    ROLE_HIERARCHY: dict[str, int] = {
+        "EMPLOYEE": 1,
+        "MANAGER": 2,
+        "HR": 3,
+        "ADMIN": 4,
     }
 
     @property
@@ -104,7 +104,7 @@ class User(AbstractUser):
     # department = models.CharField(max_length=100, blank=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []  # no username required
+    REQUIRED_FIELDS: list[str] = []  # no username required
 
     objects = UserManager()
 
@@ -144,12 +144,19 @@ class PasswordResetToken(models.Model):
             token=uuid.uuid4().hex,
         )
 
+    def _expiration_datetime(self):
+        # Allow tests to inject a custom expires_at attribute without a schema change
+        explicit = getattr(self, "expires_at", None)
+        if explicit is not None:
+            return explicit
+        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS)
+
     def mark_used(self):
         self.is_used = True
         self.save(update_fields=["is_used"])
 
     def is_expired(self):
-        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS) < timezone.now()
+        return self._expiration_datetime() < timezone.now()
 
 class EmailVerificationToken(models.Model):
     """
@@ -177,12 +184,18 @@ class EmailVerificationToken(models.Model):
             token=uuid.uuid4().hex,
         )
 
+    def _expiration_datetime(self):
+        explicit = getattr(self, "expires_at", None)
+        if explicit is not None:
+            return explicit
+        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS)
+
     def mark_used(self):
         self.is_used = True
         self.save(update_fields=["is_used"])
 
     def is_expired(self):
-        return self.created_at + timedelta(hours=self.EXPIRATION_HOURS) < timezone.now()
+        return self._expiration_datetime() < timezone.now()
 
 class LoginAttempt(models.Model):
     user = models.OneToOneField(

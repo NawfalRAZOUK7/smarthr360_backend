@@ -3,16 +3,20 @@ from rest_framework.response import Response
 
 
 class ApiResponseMixin:
-    def success_response(self, data, status=drf_status.HTTP_200_OK, headers=None):
+    def success_response(self, data, status=drf_status.HTTP_200_OK, headers=None, meta=None):
         """
         Standard success envelope used across the project.
         Returns:
             {
               "data": <payload>,
-              "meta": {"success": true}
+              "meta": {"success": true, ...}
             }
         """
-        resp = Response({"data": data, "meta": {"success": True}}, status=status)
+        meta_payload = {"success": True}
+        if meta:
+            meta_payload.update(meta)
+
+        resp = Response({"data": data, "meta": meta_payload}, status=status)
         if headers:
             for k, v in headers.items():
                 resp[k] = v
@@ -37,13 +41,21 @@ class ApiResponseMixin:
             count = getattr(self.paginator.page.paginator, "count", None)
             next_link = self.paginator.get_next_link()
             prev_link = self.paginator.get_previous_link()
+            page_number = getattr(getattr(self.paginator, "page", None), "number", None)
+            page_size = None
+            if hasattr(self.paginator, "get_page_size"):
+                try:
+                    page_size = self.paginator.get_page_size(request)
+                except Exception:
+                    page_size = None
+
             payload = {
                 "count": count,
                 "next": next_link,
                 "previous": prev_link,
                 "results": serializer.data,
             }
-            return self.success_response(payload)
+            return self.success_response(payload, meta={"page": page_number, "page_size": page_size})
 
         # If pagination is disabled, still provide a consistent structure
         serializer = self.get_serializer(queryset, many=True)

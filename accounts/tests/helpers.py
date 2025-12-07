@@ -17,7 +17,7 @@ def create_user(
     password: str = DEFAULT_PASSWORD,
     first_name: str = "Test",
     last_name: str = "User",
-    role: User.Role = User.Role.EMPLOYEE,
+    role: str = "EMPLOYEE",
     **extra,
 ):
     """Create a user with sensible defaults for tests."""
@@ -61,5 +61,8 @@ def authenticate(client: APIClient, email: str, password: str) -> str:
     access, _ = extract_tokens(response)
     if not access:
         raise AssertionError(f"No access token for {email}: {response.status_code} {response.data}")
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    if hasattr(client, "credentials"):
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    else:
+        client.defaults["HTTP_AUTHORIZATION"] = f"Bearer {access}"
     return access

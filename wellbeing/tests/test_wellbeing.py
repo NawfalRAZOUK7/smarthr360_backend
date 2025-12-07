@@ -1,4 +1,4 @@
-from django.test import TestCase
+from rest_framework.test import APITestCase
 from rest_framework import status
 
 from accounts.models import User
@@ -7,7 +7,7 @@ from hr.models import Department, EmployeeProfile
 from wellbeing.models import SurveyQuestion, SurveyResponse, WellbeingSurvey
 
 
-class WellbeingModuleTests(TestCase):
+class WellbeingModuleTests(APITestCase):
     def setUp(self):
         # Users
         self.hr_user = User.objects.create_user(

@@ -104,6 +104,7 @@ class PerformanceReviewListCreateView(ApiResponseMixin, generics.ListCreateAPIVi
         cycle = get_object_or_404(ReviewCycle, pk=cycle_id)
 
         # Determine manager for this review
+        manager = None
         if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
             manager_profile = user.employee_profile
 
@@ -114,8 +115,12 @@ class PerformanceReviewListCreateView(ApiResponseMixin, generics.ListCreateAPIVi
 
             manager = manager_profile
         else:
-            # HR/Admin: default to employee.manager (may be None)
-            manager = employee.manager
+            # HR/Admin: optional manager override if provided, otherwise use employee.manager
+            manager_id = self.request.data.get("manager")
+            if manager_id:
+                manager = get_object_or_404(EmployeeProfile, pk=manager_id)
+            else:
+                manager = employee.manager
 
         review = serializer.save(
             employee=employee,
@@ -139,6 +144,31 @@ class PerformanceReviewDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIVi
 
     def get_queryset(self):
         return _reviews_queryset_for_user(self.request.user)
+
+    def get_object(self):
+        # Fetch without filtering so we can return 403 instead of 404 on permission issues
+        review = get_object_or_404(
+            PerformanceReview.objects.select_related(
+                "employee__user", "manager", "cycle"
+            ),
+            pk=self.kwargs.get(self.lookup_field or "pk"),
+        )
+
+        user = self.request.user
+        if user.has_role(user.Role.HR, user.Role.ADMIN):
+            return review
+
+        if (
+            user.role == user.Role.MANAGER
+            and hasattr(user, "employee_profile")
+            and review.manager_id == user.employee_profile.id
+        ):
+            return review
+
+        if hasattr(user, "employee_profile") and review.employee.user_id == user.id:
+            return review
+
+        raise PermissionDenied("You do not have permission to access this review.")
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -445,6 +475,23 @@ class GoalDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return _goals_queryset_for_user(self.request.user)
+
+    def get_object(self):
+        goal = get_object_or_404(Goal.objects.select_related("employee__manager"), pk=self.kwargs.get(self.lookup_field or "pk"))
+        user = self.request.user
+
+        if user.has_role(user.Role.HR, user.Role.ADMIN):
+            return goal
+
+        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+            if goal.employee.manager_id == user.employee_profile.id:
+                return goal
+            raise PermissionDenied("You cannot access this goal.")
+
+        if hasattr(user, "employee_profile") and goal.employee.user_id == user.id:
+            return goal
+
+        raise PermissionDenied("You cannot access this goal.")
 
     def perform_update(self, serializer):
         user = self.request.user

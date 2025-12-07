@@ -32,6 +32,11 @@ urlpatterns = [
         name="auth-password-reset-request",
     ),
     path(
+        "password-reset/",
+        RequestPasswordResetView.as_view(),
+        name="auth-password-reset-request-legacy",
+    ),
+    path(
         "password-reset/confirm/",
         PasswordResetView.as_view(),
         name="auth-password-reset-confirm",
@@ -41,6 +46,11 @@ urlpatterns = [
         "email/verify/request/",
         RequestEmailVerificationView.as_view(),
         name="auth-email-verify-request",
+    ),
+    path(
+        "email/verify/",
+        RequestEmailVerificationView.as_view(),
+        name="auth-email-verify-request-legacy",
     ),
     path(
         "email/verify/confirm/",

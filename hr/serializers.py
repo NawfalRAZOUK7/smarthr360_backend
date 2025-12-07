@@ -94,6 +94,9 @@ class SkillSerializer(serializers.ModelSerializer):
     Canonical representation of a skill.
     """
 
+    # BooleanField defaults to False when omitted; explicitly default to True so new skills are active
+    is_active = serializers.BooleanField(required=False, default=True)
+
     class Meta:
         model = Skill
         fields = [

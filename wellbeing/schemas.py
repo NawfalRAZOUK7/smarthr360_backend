@@ -6,10 +6,7 @@ OpenAPI schema extensions for wellbeing endpoints.
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiResponse, extend_schema
 
-from .serializers import (
-    SurveyResponseSerializer,
-    WellbeingSurveySerializer,
-)
+from .serializers import SurveySubmissionSerializer, WellbeingSurveySerializer
 
 # Wellbeing Survey schemas
 survey_list_create_schema = extend_schema(
@@ -69,8 +66,8 @@ survey_response_list_create_schema = extend_schema(
         ),
     ],
     responses={
-        200: OpenApiResponse(description="List of survey responses", response=SurveyResponseSerializer(many=True)),
-        201: OpenApiResponse(description="Survey response submitted", response=SurveyResponseSerializer),
+        200: OpenApiResponse(description="List of survey responses", response=SurveySubmissionSerializer),
+        201: OpenApiResponse(description="Survey response submitted", response=SurveySubmissionSerializer),
     },
     tags=["Survey Responses"],
     examples=[
@@ -94,7 +91,7 @@ survey_response_detail_schema = extend_schema(
     summary="Retrieve, update, or delete survey response",
     description="Manage individual survey response. Access controlled by role and ownership.",
     responses={
-        200: OpenApiResponse(description="Survey response details", response=SurveyResponseSerializer),
+        200: OpenApiResponse(description="Survey response details", response=SurveySubmissionSerializer),
         204: OpenApiResponse(description="Survey response deleted"),
     },
     tags=["Survey Responses"],

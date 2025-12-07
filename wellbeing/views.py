@@ -4,6 +4,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
+import json
+
 from accounts.models import User
 from hr.models import EmployeeProfile
 from smarthr360_backend.api_mixins import ApiResponseMixin
@@ -84,10 +86,71 @@ class SurveySubmitView(ApiResponseMixin, APIView):
     def post(self, request, survey_id):
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id, is_active=True)
 
+        # Accept form-encoded payloads where "answers" may arrive as a JSON string
+        base_request = getattr(request, "_request", request)
+
+        # Capture raw body before request.data consumes the stream
+        parsed_body = None
+        try:
+            raw_body = getattr(base_request, "_body", None)
+            if raw_body is None and hasattr(base_request, "body"):
+                raw_body = base_request.body
+            if raw_body:
+                if isinstance(raw_body, bytes):
+                    raw_body = raw_body.decode()
+                parsed_body = json.loads(raw_body)
+        except Exception:
+            parsed_body = None
+
+        incoming_data = request.data
+        answers_value = incoming_data.get("answers")
+
+        if isinstance(parsed_body, dict) and isinstance(parsed_body.get("answers"), dict):
+            incoming_data = parsed_body
+            answers_value = parsed_body.get("answers")
+
+        # Handle form-encoded keys like answers[<id>]=value when "answers" isn't present
+        if answers_value is None and hasattr(incoming_data, "items"):
+            reconstructed = {}
+            for key, value in incoming_data.items():
+                if isinstance(key, str) and key.startswith("answers[") and key.endswith("]"):
+                    qid = key[len("answers[") : -1]
+                    reconstructed[qid] = value
+            if reconstructed:
+                mutable = incoming_data.copy()
+                mutable["answers"] = reconstructed
+                incoming_data = mutable
+                answers_value = reconstructed
+
+        # As a final fallback, try reconstructing from the underlying Django request.POST
+        if (answers_value is None or not isinstance(answers_value, dict)) and hasattr(base_request, "POST"):
+            reconstructed = {}
+            for key, value in base_request.POST.items():
+                if isinstance(key, str) and key.startswith("answers[") and key.endswith("]"):
+                    qid = key[len("answers[") : -1]
+                    reconstructed[qid] = value
+            if reconstructed:
+                incoming_data = {"answers": reconstructed}
+                answers_value = reconstructed
+
+        if isinstance(answers_value, str):
+            try:
+                decoded = json.loads(answers_value)
+                # Rebuild mutable copy with decoded answers
+                mutable = incoming_data.copy()
+                mutable["answers"] = decoded
+                incoming_data = mutable
+            except Exception:
+                # Leave as-is; serializer will surface a clear error
+                pass
+
         serializer = SurveySubmissionSerializer(
-            data=request.data,
+            data=incoming_data,
             context={"survey": survey},
         )
+        # Debug aid for tests: ensure payload shape is as expected
+        # Remove or silence if noisy in production logs
+        # print("incoming_data", incoming_data)
         serializer.is_valid(raise_exception=True)
         answers = serializer.validated_data["answers"]
 

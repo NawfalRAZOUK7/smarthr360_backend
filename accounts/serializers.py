@@ -234,17 +234,27 @@ class RequestPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
-        try:
-            user = User.objects.get(email=value)
-        except User.DoesNotExist:
-            # generic error (you could also silently succeed)
-            raise serializers.ValidationError("Aucun utilisateur avec cet email.") from None
-        self.context["user"] = user
+        self.context["user"] = User.objects.filter(email=value).first()
         return value
 
     def save(self, **kwargs):
-        user = self.context["user"]
-        token_obj = PasswordResetToken.create_for_user(user)
+        user = self.context.get("user")
+        if not user:
+            # Return silently for non-existent accounts to avoid leaking existence
+            return None
+
+        # Reuse existing active token to avoid duplicates
+        token_obj = (
+            PasswordResetToken.objects.filter(user=user, is_used=False)
+            .order_by("-created_at")
+            .first()
+        )
+        if token_obj and token_obj.is_expired():
+            token_obj.delete()
+            token_obj = None
+
+        if token_obj is None:
+            token_obj = PasswordResetToken.create_for_user(user)
 
         # In real prod, you'd use your front-end URL
         frontend_base = "http://localhost:3000"
@@ -317,7 +327,18 @@ class RequestEmailVerificationSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         user = self.context["user"]
-        token_obj = EmailVerificationToken.create_for_user(user)
+        token_obj = (
+            EmailVerificationToken.objects.filter(user=user, is_used=False)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if token_obj and token_obj.is_expired():
+            token_obj.delete()
+            token_obj = None
+
+        if token_obj is None:
+            token_obj = EmailVerificationToken.create_for_user(user)
 
         frontend_base = "http://localhost:3000"  # adapt later to your real FE URL
         verify_link = f"{frontend_base}/verify-email?token={token_obj.token}"

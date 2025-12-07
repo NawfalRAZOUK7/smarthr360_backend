@@ -163,7 +163,11 @@ class SkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
         return [IsManagerOrAbove()]
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        is_active = serializer.validated_data.get("is_active")
+        if is_active is None:
+            serializer.save(created_by=self.request.user, is_active=True)
+        else:
+            serializer.save(created_by=self.request.user)
 
 
 class SkillDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -183,6 +187,32 @@ class SkillDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
 class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     serializer_class = EmployeeSkillSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+
+        # Permission check before any validation to ensure correct status code
+        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
+            raise PermissionDenied("Only HR, Manager or Admin can create skill evaluations.")
+
+        # Accept "proficiency" alias and map enum names to numeric levels
+        data = request.data.copy()
+        if "proficiency" in data and "level" not in data:
+            proficiency = data.get("proficiency")
+            # Allow string names like "BEGINNER" or integers already
+            if isinstance(proficiency, str):
+                try:
+                    data["level"] = EmployeeSkill.Level[proficiency].value
+                except KeyError:
+                    pass
+            else:
+                data["level"] = proficiency
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return self.success_response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
         user = self.request.user
@@ -204,9 +234,6 @@ class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-
-        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
-            raise PermissionDenied("Only HR, Manager or Admin can create skill evaluations.")
 
         employee_id = self.request.data.get("employee_id")
         skill_id = self.request.data.get("skill_id")
