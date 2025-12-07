@@ -63,6 +63,7 @@ jobs:
           path: |
             .coverage.${{ matrix.python-version }}
             coverage.xml
+          include-hidden-files: true
 
   lint-type:
     runs-on: ubuntu-latest
