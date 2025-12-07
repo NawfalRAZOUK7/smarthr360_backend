@@ -19,6 +19,7 @@ env/
 db.sqlite3
 db.sqlite3-journal
 media/
+staticfiles/
 
 # Environment variables
 .env
@@ -56,7 +57,4 @@ docs/
 .DS_Store
 Thumbs.db
 
-# Deployment configs (already in image)
-Dockerfile
-docker-compose.yml
-.dockerignore
+
