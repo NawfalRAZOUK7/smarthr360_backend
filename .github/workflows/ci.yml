@@ -131,7 +131,7 @@ jobs:
       - name: Combine coverage
         run: |
           cd coverage-artifacts
-          coverage combine
+          coverage combine $(find . -name ".coverage*" -type f)
           coverage xml -o ../coverage.xml
           coverage report -m --fail-under=80
 
