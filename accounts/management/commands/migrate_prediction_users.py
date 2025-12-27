@@ -259,8 +259,15 @@ class Command(BaseCommand):
         if not db_config:
             raise CommandError("Unable to parse --source-url.")
 
+        db_config.setdefault("TIME_ZONE", settings.TIME_ZONE)
+        db_config.setdefault("CONN_MAX_AGE", 0)
+        db_config.setdefault("CONN_HEALTH_CHECKS", False)
+        db_config.setdefault("OPTIONS", {})
+        db_config.setdefault("TEST", {})
+        db_config.setdefault("AUTOCOMMIT", True)
+        db_config.setdefault("ATOMIC_REQUESTS", False)
+
         settings.DATABASES[SOURCE_ALIAS] = db_config
-        connections.databases = settings.DATABASES
 
         try:
             connections[SOURCE_ALIAS].ensure_connection()
