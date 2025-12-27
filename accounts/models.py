@@ -4,9 +4,16 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.db.models.functions import Lower
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+
+
+def normalize_email_address(email):
+    if not email:
+        return email
+    return email.strip().lower()
 
 
 class UserManager(BaseUserManager):
@@ -18,10 +25,15 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("L'utilisateur doit avoir une adresse email.")
         email = self.normalize_email(email)
+        extra_fields.setdefault("username", email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    @classmethod
+    def normalize_email(cls, email):
+        return normalize_email_address(email)
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
@@ -55,9 +67,13 @@ class User(AbstractUser):
         HR = "HR", "HR"
         ADMIN = "ADMIN", "Admin"
 
-    # we remove username and use email instead
-    # ❗ Remove username, use email instead
-    username = None
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="Compatibility username; defaults to normalized email.",
+    )
 
     # ❗ MUST be unique because USERNAME_FIELD = "email"
     email = models.EmailField(unique=True)
@@ -110,7 +126,28 @@ class User(AbstractUser):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_email_verified = models.BooleanField(default=False)  # ⬅️ NEW
+    is_email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                name="accounts_user_email_ci_unique",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["role"], name="accounts_user_role_idx"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = normalize_email_address(self.email)
+        if self.email:
+            self.username = self.email
+        if self.is_email_verified and not self.email_verified_at:
+            self.email_verified_at = timezone.now()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.email} ({self.role})"

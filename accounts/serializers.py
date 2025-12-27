@@ -12,6 +12,7 @@ from .models import (
     LoginAttempt,
     PasswordResetToken,
     User,
+    normalize_email_address,
 )
 
 
@@ -19,7 +20,15 @@ class UserSerializer(serializers.ModelSerializer):
     """Public user data returned to the frontend."""
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "role"]
+        fields = [
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "role",
+            "email_verified_at",
+        ]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -62,6 +71,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return user
 
+    def validate_email(self, value):
+        normalized_email = normalize_email_address(value)
+        if User.objects.filter(email__iexact=normalized_email).exists():
+            raise serializers.ValidationError("Un utilisateur avec cet email existe déjà.")
+        return normalized_email
+
 
 class LoginSerializer(serializers.Serializer):
     """Used for /login endpoint."""
@@ -77,12 +92,12 @@ class LoginSerializer(serializers.Serializer):
         return ip, ua
 
     def validate(self, attrs):
-        email = attrs.get("email")
+        email = normalize_email_address(attrs.get("email"))
         password = attrs.get("password")
         ip, ua = self._get_request_meta()
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             # optional: we don't log here since we don't have a user FK
             raise serializers.ValidationError("Identifiants invalides.") from None
@@ -234,8 +249,9 @@ class RequestPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
-        self.context["user"] = User.objects.filter(email=value).first()
-        return value
+        normalized_email = normalize_email_address(value)
+        self.context["user"] = User.objects.filter(email__iexact=normalized_email).first()
+        return normalized_email
 
     def save(self, **kwargs):
         user = self.context.get("user")
@@ -314,8 +330,9 @@ class RequestEmailVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
+        normalized_email = normalize_email_address(value)
         try:
-            user = User.objects.get(email=value)
+            user = User.objects.get(email__iexact=normalized_email)
         except User.DoesNotExist:
             # generic response: do not leak existence
             raise serializers.ValidationError("Aucun utilisateur avec cet email.") from None
@@ -323,7 +340,7 @@ class RequestEmailVerificationSerializer(serializers.Serializer):
         if user.is_email_verified:
             raise serializers.ValidationError("Cet email est déjà vérifié.")
         self.context["user"] = user
-        return value
+        return normalized_email
 
     def save(self, **kwargs):
         user = self.context["user"]
@@ -386,7 +403,8 @@ class EmailVerificationSerializer(serializers.Serializer):
         user = token_obj.user
 
         user.is_email_verified = True
-        user.save(update_fields=["is_email_verified"])
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["is_email_verified", "email_verified_at"])
 
         token_obj.mark_used()
         return user
