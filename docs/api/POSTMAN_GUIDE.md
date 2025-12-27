@@ -31,7 +31,7 @@ The collection is organized into **5 main categories**:
 - Password Reset Flow
 - Email Verification Flow
 - Logout
-- List Users (HR only)
+- List Users (HR or Support)
 
 ### 🏢 HR - Departments (5 endpoints)
 
@@ -41,6 +41,7 @@ The collection is organized into **5 main categories**:
 ### 👥 HR - Employees (6 endpoints)
 
 - List employees with advanced filters
+- Auditor read-only access to list and my-team
 - Get/Update my profile
 - Create/Update/View employee profiles
 
@@ -57,13 +58,15 @@ The collection is organized into **5 main categories**:
 - Create/Submit/Approve reviews
 - Review items and ratings
 - Goal management
+- Auditor read-only access to list/detail endpoints
 
-### 💚 Wellbeing (8 endpoints)
+### 💚 Wellbeing (9 endpoints)
 
 - Survey management
 - Submit responses
 - View statistics
 - Track wellbeing metrics
+- Team stats endpoint (Manager/HR/Admin/Auditor)
 
 ---
 
@@ -255,6 +258,31 @@ Test different user roles:
 - ✅ Full system access
 - ✅ Can approve reviews
 - ✅ Can create review cycles
+
+### Auditor Group (read-only)
+
+> Assign the user to the `AUDITOR` group in Django admin.
+
+- ✅ Read-only access to HR/Reviews/Wellbeing lists and details
+- ❌ Cannot create or update resources
+
+### Support Group
+
+> Assign the user to the `SUPPORT` group in Django admin.
+
+- ✅ Can list users (`GET /api/auth/users/`)
+- ❌ No additional HR permissions
+
+---
+
+## ✅ QA Checklist (Quick)
+
+1. Support user → `GET /api/auth/users/` returns 200
+2. Auditor user → `GET /api/hr/employees/` returns 200; `POST /api/hr/employees/` returns 403
+3. Auditor user → `GET /api/reviews/` returns 200; `POST /api/reviews/` returns 403
+4. Auditor user → `GET /api/wellbeing/surveys/:id/stats/` and `/team-stats/` return 200
+5. Manager user → `GET /api/hr/employees/my-team/` returns 200; `GET /api/hr/employees/` returns 403
+6. Employee user → `GET /api/wellbeing/surveys/:id/stats/` returns 403
 
 ---
 

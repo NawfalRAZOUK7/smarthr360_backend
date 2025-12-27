@@ -133,7 +133,7 @@ paths:
   /api/auth/users/:
     get:
       operationId: auth_users_list
-      description: Get a list of all users in the system. Requires HR role.
+      description: Get a list of all users in the system. Requires HR/ADMIN or SUPPORT group.
       summary: List all users
       parameters:
       - name: page
@@ -160,7 +160,7 @@ paths:
                 $ref: '#/components/schemas/PaginatedUserList'
           description: List of users
         '403':
-          description: Permission denied - HR role required
+          description: Permission denied - HR/ADMIN or SUPPORT required
   /api/auth/change-password/:
     post:
       operationId: auth_change_password_create
@@ -520,6 +520,7 @@ paths:
   /api/hr/employees/my-team/:
     get:
       operationId: hr_employees_my_team_list
+      description: List employees in current user's team. HR/Admin and Auditor see all; Manager sees direct reports.
       parameters:
       - name: page
         required: false
@@ -547,6 +548,7 @@ paths:
   /api/hr/employees/:
     get:
       operationId: hr_employees_list
+      description: List employee profiles. HR/Admin see all; Auditor has read-only access.
       parameters:
       - name: page
         required: false
@@ -573,6 +575,7 @@ paths:
           description: ''
     post:
       operationId: hr_employees_create
+      description: Create an employee profile. HR/Admin only.
       tags:
       - hr
       requestBody:
@@ -598,6 +601,7 @@ paths:
   /api/hr/employees/{id}/:
     get:
       operationId: hr_employees_retrieve
+      description: Retrieve employee profile. HR/Admin any; Manager team; Employee self; Auditor read-only.
       parameters:
       - in: path
         name: id
@@ -1260,6 +1264,7 @@ paths:
             HR/Admin → all
             Manager  → their team reviews
             Employee → own reviews
+            Auditor  → read-only
 
         POST /api/reviews/
             Manager / HR / Admin → create review
@@ -1294,6 +1299,7 @@ paths:
             HR/Admin → all
             Manager  → their team reviews
             Employee → own reviews
+            Auditor  → read-only
 
         POST /api/reviews/
             Manager / HR / Admin → create review
@@ -1328,6 +1334,7 @@ paths:
             - Manager: can edit if DRAFT
             - HR/Admin: can always edit
             - Employee: can update only employee_comment when DRAFT
+            - Auditor: read-only
       parameters:
       - in: path
         name: id
@@ -1353,6 +1360,7 @@ paths:
             - Manager: can edit if DRAFT
             - HR/Admin: can always edit
             - Employee: can update only employee_comment when DRAFT
+            - Auditor: read-only
       parameters:
       - in: path
         name: id
@@ -1389,6 +1397,7 @@ paths:
             - Manager: can edit if DRAFT
             - HR/Admin: can always edit
             - Employee: can update only employee_comment when DRAFT
+            - Auditor: read-only
       parameters:
       - in: path
         name: id
@@ -1460,7 +1469,7 @@ paths:
       operationId: reviews_items_list
       description: |-
         GET  /api/reviews/<review_id>/items/
-            → list items of a review (same visibility as review)
+            → list items of a review (same visibility as review; auditor read-only)
 
         POST /api/reviews/<review_id>/items/
             → Manager / HR / Admin add items when review is DRAFT
@@ -1497,7 +1506,7 @@ paths:
       operationId: reviews_items_create
       description: |-
         GET  /api/reviews/<review_id>/items/
-            → list items of a review (same visibility as review)
+            → list items of a review (same visibility as review; auditor read-only)
 
         POST /api/reviews/<review_id>/items/
             → Manager / HR / Admin add items when review is DRAFT
@@ -1646,6 +1655,7 @@ paths:
             HR/Admin → all
             Manager  → team goals
             Employee → own goals
+            Auditor  → read-only
 
         POST /api/reviews/goals/
             - Employee: can create own goals
@@ -1682,6 +1692,7 @@ paths:
             HR/Admin → all
             Manager  → team goals
             Employee → own goals
+            Auditor  → read-only
 
         POST /api/reviews/goals/
             - Employee: can create own goals
@@ -2137,6 +2148,7 @@ paths:
   /api/wellbeing/surveys/{survey_id}/stats/:
     get:
       operationId: wellbeing_surveys_stats_retrieve
+      description: Get survey statistics. HR/Admin/Auditor only (read-only for auditor).
       parameters:
       - in: path
         name: survey_id
@@ -2153,6 +2165,7 @@ paths:
   /api/wellbeing/surveys/{survey_id}/team-stats/:
     get:
       operationId: wellbeing_surveys_team_stats_retrieve
+      description: Get team stats. Manager team scope; HR/Admin/Auditor see all (auditor read-only).
       parameters:
       - in: path
         name: survey_id
