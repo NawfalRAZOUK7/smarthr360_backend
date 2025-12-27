@@ -1392,10 +1392,40 @@
                 }
               ]
             },
-            "description": "Get aggregated survey statistics. Requires HR/Admin."
+            "description": "Get aggregated survey statistics. Requires HR/Admin/Auditor."
           },
           "response": [],
           "description": "Access: HR, ADMIN, or AUDITOR (read-only)."
+        },
+        {
+          "name": "Get Team Stats (Manager/HR/Admin/Auditor)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wellbeing/surveys/:id/team-stats/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "surveys",
+                ":id",
+                "team-stats",
+                ""
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get team-level survey statistics. Requires Manager/HR/Admin/Auditor."
+          },
+          "response": [],
+          "description": "Access: MANAGER, HR, ADMIN, or AUDITOR (read-only)."
         },
         {
           "name": "List Survey Responses",
