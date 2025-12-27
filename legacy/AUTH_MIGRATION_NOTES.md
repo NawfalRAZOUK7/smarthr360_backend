@@ -50,6 +50,15 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 6) Tests: ajouter/adapter les tests d’auth (login email, lockout, reset, verify email, logout blacklist, permissions par rôle/groupe), et les tests d’intégration avec future_skills.
 7) Qualité: fixer les warnings de pagination (ordering EmployeeProfile) et ajouter `auth/staticfiles/` pour collectstatic.
 
+Statut (auth):
+- [x] 1) django-axes activé (apps/middleware/backends) + lockout aligné.
+- [x] 2) `accounts.User` en place côté auth; script de migration prediction_skills à planifier.
+- [x] 3) Sync rôle ↔ groupes + permissions DRF alignées.
+- [x] 4) Endpoints auth + enveloppe standard + docs/Postman à jour.
+- [x] 5) Sécurité/lockout/headers alignés.
+- [x] 6) Tests auth couvrant login/lockout/reset/vérif email/permissions.
+- [x] 7) Warnings pagination corrigés + `auth/staticfiles/`.
+
 ## 8) Points de migration / data
 - S’assurer que tous les utilisateurs ont un email unique (sinon dédoublonner). Remplir username = email pendant la transition si nécessaire.
 - Recréer les superusers/admin techniques avec le nouveau modèle.
