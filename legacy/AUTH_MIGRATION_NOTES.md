@@ -7,20 +7,19 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - État `prediction_skills`: User Django par défaut (username requis), rôles via groupes DRH/RESPONSABLE_RH/MANAGER.
 - Décision cible: email = identifiant unique. Converger vers `accounts.User` (ou alias `username=email` si étape intermédiaire). Garder `role` enum comme source d’autorité.
 - À prévoir: migration des données (copier username→email si vide, forcer unicité email, recréer utilisateurs de service/test).
- - Statut (auth): compat `username` ajouté (alias email), normalisation email + contrainte unique case-insensitive, `email_verified_at`, index sur `role`.
+- Statut (auth): compat `username` ajouté, normalisation email + contrainte unique case-insensitive, `email_verified_at`, index sur `role`.
 
 ## 2) Rôles / groupes / permissions
-- Rôles `auth`: EMPLOYEE, MANAGER, HR, ADMIN.
-- Groupes `prediction_skills`: DRH, RESPONSABLE_RH, MANAGER.
-- Mapping recommandé: DRH → ADMIN (ou HR si ADMIN réservé au tech), RESPONSABLE_RH → HR, MANAGER → MANAGER.
-- Stratégie: choisir la source unique (role enum) et synchroniser vers les groupes pour compatibilité (signal post_save ou management command de bootstrap). Simplifier les permissions DRF pour utiliser soit le role, soit le groupe mappé, mais pas deux logiques divergentes.
+- Rôles `auth`: EMPLOYEE, MANAGER, HR, ADMIN (ADMIN = admin général/technique).
+- Groupes (auth): HR, HR_ADMIN, MANAGER, MANAGER_ADMIN, EMPLOYEE, EMPLOYEE_ADMIN, AUDITOR, SECURITY_ADMIN, SUPPORT.
+- Stratégie: role = source de vérité, groupes synchronisés (base) pour compatibilité. Les groupes “*_ADMIN” sont gérés manuellement.
+- Sync base (auth): HR → HR, MANAGER → MANAGER, EMPLOYEE → EMPLOYEE. ADMIN bypass toutes permissions.
 
 ## 3) Flux d’authentification
 - Couverture `auth` (à conserver): register, login, refresh, logout (blacklist), me, reset mot de passe, vérification email, suivi des login, lockout custom.
 - Couverture `prediction_skills` (à intégrer si besoin): monitoring APM/logs, éventuelle personnalisation middleware.
 - Actions prévues: exposer le login par email, conserver refresh/blacklist, garder `ApiResponseMixin` pour les enveloppes de réponse, ajouter endpoints reset/vérif email si absents côté consommateur.
-- Statut (auth): login accepte email ou username; register accepte username (optionnel).
- - Statut (auth): username requis à l’inscription.
+- Statut (auth): login accepte email ou username; username requis à l’inscription.
 
 ## 4) Sécurité / verrouillage
 - `auth`: `LoginAttempt` (lock après N échecs), email d’alerte, `LoginActivity` (audit).
@@ -39,7 +38,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 ## 7) Étapes techniques proposées
 1) Activer/porter django-axes dans `auth` (settings, middleware, config lock sur email). Garder `LoginActivity`.
 2) Unifier le modèle user: utiliser `accounts.User` comme référence; ajouter un script de migration des users existants (username→email, création des rôles/groupes). Si transition douce: alias `username=email` temporaire.
-3) Synchroniser rôle ↔ groupes: commande de bootstrap (créer groupes DRH/RESPONSABLE_RH/MANAGER) et signal pour tenir à jour. Mettre à jour permissions DRF pour lire le rôle ou les groupes mappés.
+3) Synchroniser rôle ↔ groupes: migration de bootstrap (groupes HR/HR_ADMIN/MANAGER/MANAGER_ADMIN/EMPLOYEE/EMPLOYEE_ADMIN/AUDITOR/SECURITY_ADMIN/SUPPORT) et signal pour tenir à jour. Mettre à jour permissions DRF pour lire le rôle ou les groupes mappés.
 4) Standardiser les endpoints et contrats: login/register/reset/verify email, `/me`, logout blacklist; choisir l’enveloppe de réponse unique. Mettre à jour Postman/tests.
 5) Sécurité applicative: aligner lockout (seuil/durée), CSRF/CORS/headers, logs de sécurité (APM si souhaité), monitoring (prometheus si requis).
 6) Tests: ajouter/adapter les tests d’auth (login email, lockout, reset, verify email, logout blacklist, permissions par rôle/groupe), et les tests d’intégration avec future_skills.

@@ -2,7 +2,26 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from hr.models import EmployeeProfile  # add this import at the top of the file
 
+from .grouping import HR_GROUPS, MANAGER_GROUPS
 from .models import User
+
+
+def _is_admin(user) -> bool:
+    return bool(
+        user
+        and user.is_authenticated
+        and (user.is_superuser or user.role == User.Role.ADMIN)
+    )
+
+
+def _in_groups(user, group_names) -> bool:
+    if _is_admin(user):
+        return True
+    return bool(
+        user
+        and user.is_authenticated
+        and user.groups.filter(name__in=group_names).exists()
+    )
 
 
 class IsAdminRole(BasePermission):
@@ -11,12 +30,7 @@ class IsAdminRole(BasePermission):
     """
 
     def has_permission(self, request, view):
-        user = request.user
-        return bool(
-            user
-            and user.is_authenticated
-            and user.role == User.Role.ADMIN
-        )
+        return _is_admin(request.user)
 
 
 class IsHRRole(BasePermission):
@@ -26,11 +40,11 @@ class IsHRRole(BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return bool(
-            user
-            and user.is_authenticated
-            and user.has_role(User.Role.HR, User.Role.ADMIN)
-        )
+        if _is_admin(user):
+            return True
+        if user and user.is_authenticated and user.role == User.Role.HR:
+            return True
+        return _in_groups(user, HR_GROUPS)
 
 
 class IsManagerOrAbove(BasePermission):
@@ -40,11 +54,11 @@ class IsManagerOrAbove(BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return bool(
-            user
-            and user.is_authenticated
-            and user.is_at_least(User.Role.MANAGER)
-        )
+        if _is_admin(user):
+            return True
+        if user and user.is_authenticated and user.is_at_least(User.Role.MANAGER):
+            return True
+        return _in_groups(user, MANAGER_GROUPS | HR_GROUPS)
 
 
 class ReadOnlyOrAdmin(BasePermission):
@@ -63,7 +77,7 @@ class ReadOnlyOrAdmin(BasePermission):
             return True
 
         # write methods
-        return user.role == User.Role.ADMIN
+        return _is_admin(user)
 
 class EmployeeProfileAccessPermission(BasePermission):
     """
@@ -80,7 +94,9 @@ class EmployeeProfileAccessPermission(BasePermission):
             return False
 
         # HR & Admin → full access
-        if user.has_role(user.Role.HR, user.Role.ADMIN):
+        if _is_admin(user) or user.has_role(user.Role.HR):
+            return True
+        if _in_groups(user, HR_GROUPS):
             return True
 
         # Employee → only their own profile
@@ -88,7 +104,10 @@ class EmployeeProfileAccessPermission(BasePermission):
             return True
 
         # Manager → their direct team (employee_profile.manager == manager_profile)
-        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+        if (
+            (user.role == user.Role.MANAGER or _in_groups(user, MANAGER_GROUPS))
+            and hasattr(user, "employee_profile")
+        ):
             manager_profile = user.employee_profile
             return obj.manager_id == manager_profile.id
 

@@ -26,6 +26,7 @@ class HRPermissionsTests(APITestCase):
         # HR user
         hr_payload = {
             "email": "hr@example.com",
+            "username": "hr_user",
             "first_name": "HR",
             "last_name": "User",
             "password": "HrPass123!",
@@ -37,6 +38,7 @@ class HRPermissionsTests(APITestCase):
         # Manager user
         manager_payload = {
             "email": "manager@example.com",
+            "username": "manager_user",
             "first_name": "Mona",
             "last_name": "Manager",
             "password": "ManagerPass123!",
@@ -48,6 +50,7 @@ class HRPermissionsTests(APITestCase):
         # Employee (team member)
         team_emp_payload = {
             "email": "teamemp@example.com",
+            "username": "teamemp_user",
             "first_name": "Team",
             "last_name": "Employee",
             "password": "EmpPass123!",
@@ -59,6 +62,7 @@ class HRPermissionsTests(APITestCase):
         # Employee (non-team)
         other_emp_payload = {
             "email": "otheremp@example.com",
+            "username": "otheremp_user",
             "first_name": "Other",
             "last_name": "Employee",
             "password": "EmpPass123!",
