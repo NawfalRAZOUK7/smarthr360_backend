@@ -5,6 +5,12 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.access import (
+    has_employee_access,
+    has_hr_access,
+    has_manager_access,
+    is_manager,
+)
 from accounts.models import User
 from accounts.permissions import EmployeeProfileAccessPermission, IsHRRole, IsManagerOrAbove
 from smarthr360_backend.api_mixins import ApiResponseMixin
@@ -137,7 +143,7 @@ class MyTeamListView(ApiResponseMixin, generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        if user.has_role(user.Role.HR, user.Role.ADMIN):
+        if has_hr_access(user):
             return EmployeeProfile.objects.select_related("user", "department").all()
 
         if hasattr(user, "employee_profile"):
@@ -192,7 +198,7 @@ class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
         user = request.user
 
         # Permission check before any validation to ensure correct status code
-        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
+        if not has_manager_access(user):
             raise PermissionDenied("Only HR, Manager or Admin can create skill evaluations.")
 
         # Accept "proficiency" alias and map enum names to numeric levels
@@ -220,14 +226,14 @@ class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
             "employee__user", "employee__department", "skill"
         )
 
-        if user.has_role(user.Role.HR, user.Role.ADMIN):
+        if has_hr_access(user):
             return qs
 
-        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+        if is_manager(user) and hasattr(user, "employee_profile"):
             manager_profile = user.employee_profile
             return qs.filter(employee__manager=manager_profile)
 
-        if hasattr(user, "employee_profile"):
+        if has_employee_access(user) and hasattr(user, "employee_profile"):
             return qs.filter(employee__user=user)
 
         return qs.none()
@@ -244,7 +250,7 @@ class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
         employee = get_object_or_404(EmployeeProfile, pk=employee_id)
         skill = get_object_or_404(Skill, pk=skill_id)
 
-        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+        if is_manager(user) and hasattr(user, "employee_profile"):
             manager_profile = user.employee_profile
             if employee.manager_id != manager_profile.id:
                 raise PermissionDenied("You can only rate skills of your team members.")
@@ -267,21 +273,21 @@ class EmployeeSkillDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
             "employee__user", "employee__department", "skill"
         )
 
-        if user.has_role(user.Role.HR, user.Role.ADMIN):
+        if has_hr_access(user):
             return qs
 
-        if user.role == user.Role.MANAGER and hasattr(user, "employee_profile"):
+        if is_manager(user) and hasattr(user, "employee_profile"):
             manager_profile = user.employee_profile
             return qs.filter(employee__manager=manager_profile)
 
-        if hasattr(user, "employee_profile"):
+        if has_employee_access(user) and hasattr(user, "employee_profile"):
             return qs.filter(employee__user=user)
 
         return qs.none()
 
     def perform_update(self, serializer):
         user = self.request.user
-        if not user.has_role(user.Role.MANAGER, user.Role.HR, user.Role.ADMIN):
+        if not has_manager_access(user):
             raise PermissionDenied("Only HR, Manager or Admin can update skill evaluations.")
         serializer.save(
             last_evaluated_by=user,

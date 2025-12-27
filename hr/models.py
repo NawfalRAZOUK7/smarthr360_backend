@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from accounts.access import has_manager_access
 
 class Department(models.Model):
     """
@@ -73,13 +74,9 @@ class EmployeeProfile(models.Model):
         if self.manager_id and self.manager_id == self.id:
             raise ValidationError("An employee cannot be their own manager.")
 
-        # manager must have MANAGER / HR / ADMIN role
-        if self.manager and self.manager.user.role not in [
-            self.manager.user.Role.MANAGER,
-            self.manager.user.Role.HR,
-            self.manager.user.Role.ADMIN,
-        ]:
-            raise ValidationError("Selected manager must have Manager, HR, or Admin role.")
+        # manager must have MANAGER / HR / ADMIN access
+        if self.manager and not has_manager_access(self.manager.user):
+            raise ValidationError("Selected manager must have Manager, HR, or Admin access.")
 
 class Skill(models.Model):
     """

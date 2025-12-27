@@ -14,6 +14,8 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - Groupes (auth): HR, HR_ADMIN, MANAGER, MANAGER_ADMIN, EMPLOYEE, EMPLOYEE_ADMIN, AUDITOR, SECURITY_ADMIN, SUPPORT.
 - Stratégie: role = source de vérité, groupes synchronisés (base) pour compatibilité. Les groupes “*_ADMIN” sont gérés manuellement.
 - Sync base (auth): HR → HR, MANAGER → MANAGER, EMPLOYEE → EMPLOYEE. ADMIN bypass toutes permissions.
+- Permissions dédiées: `IsAuditorReadOnly`, `IsSecurityAdmin`, `IsSupport` + helpers d’accès (roles + groupes).
+- Statut (auth): HR a accès aux endpoints manager via `IsManagerOrAbove`.
 
 ## 3) Flux d’authentification
 - Couverture `auth` (à conserver): register, login, refresh, logout (blacklist), me, reset mot de passe, vérification email, suivi des login, lockout custom.

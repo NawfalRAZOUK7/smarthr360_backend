@@ -6,6 +6,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
+from accounts.access import has_hr_access, is_manager
 from accounts.models import User
 from hr.models import EmployeeProfile
 from smarthr360_backend.api_mixins import ApiResponseMixin
@@ -27,7 +28,7 @@ class WellbeingSurveyListCreateView(ApiResponseMixin, generics.ListCreateAPIView
 
     def perform_create(self, serializer):
         user = self.request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can create wellbeing surveys.")
         serializer.save(created_by=user)
 
@@ -39,7 +40,7 @@ class WellbeingSurveyDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView
 
     def perform_update(self, serializer):
         user = self.request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can update wellbeing surveys.")
         serializer.save()
 
@@ -57,7 +58,7 @@ class SurveyQuestionListCreateView(ApiResponseMixin, generics.ListCreateAPIView)
 
     def perform_create(self, serializer):
         user = self.request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can add questions.")
         serializer.save(survey=self.get_survey())
 
@@ -69,13 +70,13 @@ class SurveyQuestionDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyA
 
     def perform_update(self, serializer):
         user = self.request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can update questions.")
         serializer.save()
 
     def perform_destroy(self, instance):
         user = self.request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can delete questions.")
         super().perform_destroy(instance)
 
@@ -178,7 +179,7 @@ class SurveyStatsView(ApiResponseMixin, APIView):
 
     def get(self, request, survey_id):
         user = request.user
-        if not user.has_role(user.Role.HR, user.Role.ADMIN):
+        if not has_hr_access(user):
             raise PermissionDenied("Only HR or Admin can view global wellbeing stats.")
 
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
@@ -235,9 +236,9 @@ class TeamStatsView(ApiResponseMixin, APIView):
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
 
         # Team filtering
-        if user.has_role(user.Role.HR, user.Role.ADMIN):
+        if has_hr_access(user):
             team_profiles = EmployeeProfile.objects.all()
-        elif user.role == User.Role.MANAGER and hasattr(user, "employee_profile"):
+        elif is_manager(user) and hasattr(user, "employee_profile"):
             team_profiles = EmployeeProfile.objects.filter(manager=user.employee_profile)
         else:
             raise PermissionDenied("Only managers (or HR/Admin) can view team stats.")
