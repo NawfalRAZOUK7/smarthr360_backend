@@ -755,7 +755,7 @@ Many views use custom `get_queryset()` methods to filter data based on user role
 ### 1. **Authentication**
 
 - JWT tokens required for all non-public endpoints
-- Tokens expire (access: 1 hour, refresh: 7 days)
+- Tokens expire (access: 30 minutes, refresh: 7 days)
 - Failed login tracking and account lockout
 
 ### 2. **Authorization**
@@ -886,7 +886,7 @@ Many views use custom `get_queryset()` methods to filter data based on user role
 **401 Unauthorized**:
 
 - Token missing or invalid
-- Token expired (access token valid for 1 hour)
+- Token expired (access token valid for 30 minutes)
 - User not authenticated
 
 ---

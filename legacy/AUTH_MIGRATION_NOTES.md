@@ -33,6 +33,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 ## 5) JWT / sessions
 - Les deux projets utilisent SimpleJWT; différence: login username (prediction_skills) vs email (auth).
 - Cible: login email. Conserver rotation/blacklist. Harmoniser `SIMPLE_JWT` (durées, headers) et `AXES_LOCK_OUT_PARAMETERS` (email plutôt que username).
+- Statut (auth): `SIMPLE_JWT` aligné (access 30 min, refresh 7 jours, rotation/blacklist, issuer `smarthr360`, claims explicites).
 
 ## 6) Structure des réponses API
 - `auth`: enveloppe standard `{"data": ..., "meta": {"success": true}}` via `ApiResponseMixin`.

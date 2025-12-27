@@ -213,10 +213,11 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS=False  # Set to True in production
 SECURE_HSTS_PRELOAD=False  # Set to True in production
 
 # JWT Settings
-JWT_ACCESS_TOKEN_LIFETIME=15  # Minutes
+JWT_ACCESS_TOKEN_LIFETIME=30  # Minutes
 JWT_REFRESH_TOKEN_LIFETIME=7  # Days
 JWT_ROTATE_REFRESH_TOKENS=True
 JWT_BLACKLIST_AFTER_ROTATION=True
+JWT_ISSUER=smarthr360
 
 # Admin Panel Security
 ADMIN_ENABLED=True  # Set to False to disable admin in production

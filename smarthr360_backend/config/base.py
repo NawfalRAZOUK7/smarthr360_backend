@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=15, cast=int)
+        minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=30, cast=int)
     ),
     "REFRESH_TOKEN_LIFETIME": timedelta(
         days=config('JWT_REFRESH_TOKEN_LIFETIME', default=7, cast=int)
@@ -154,6 +154,17 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": config('JWT_BLACKLIST_AFTER_ROTATION', default=True, cast=bool),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,
+    "AUDIENCE": None,
+    "ISSUER": config('JWT_ISSUER', default='smarthr360'),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "JTI_CLAIM": "jti",
 }
 
 # Email configuration

@@ -1368,8 +1368,8 @@ The API provides interactive documentation through multiple interfaces:
 ## Rate Limiting
 
 - Login attempts are rate-limited to prevent brute force attacks
-- After 5 failed login attempts within 15 minutes, account is temporarily locked
-- Account automatically unlocks after 30 minutes
+- After 5 failed login attempts, account is temporarily locked
+- Account automatically unlocks after 30 minutes (configurable)
 
 ---
 
@@ -1380,7 +1380,7 @@ The API provides interactive documentation through multiple interfaces:
 3. **Email**: Email addresses are case-insensitive
 4. **Passwords**: Must be strong (minimum 8 characters, mix of letters, numbers, symbols)
 5. **Token Expiration**:
-   - Access tokens: 1 hour
+   - Access tokens: 30 minutes
    - Refresh tokens: 7 days
    - Password reset tokens: 1 hour
    - Email verification tokens: 24 hours
