@@ -66,12 +66,16 @@ class EmployeeProfileAccessPermission(BasePermission):
     - HR / ADMIN: full access
     - Employee: only their own profile
     - Manager: only their direct team members
+    - Auditor: read-only access
     """
 
     def has_object_permission(self, request, view, obj: EmployeeProfile):
         user = request.user
         if not (user and user.is_authenticated):
             return False
+
+        if request.method in SAFE_METHODS and is_auditor(user):
+            return True
 
         # HR & Admin → full access
         if has_hr_access(user):
@@ -116,3 +120,37 @@ class IsSupport(BasePermission):
 
     def has_permission(self, request, view):
         return is_support(request.user)
+
+
+class IsHROrAuditorReadOnly(BasePermission):
+    """
+    Allow HR/Admin to write, and auditors to read-only.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method in SAFE_METHODS:
+            return has_hr_access(user) or is_auditor(user)
+        return has_hr_access(user)
+
+
+class IsManagerOrAuditorReadOnly(BasePermission):
+    """
+    Allow Manager/HR/Admin to write, and auditors to read-only.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method in SAFE_METHODS:
+            return has_manager_access(user) or is_auditor(user)
+        return has_manager_access(user)
+
+
+class IsHRRoleOrSupport(BasePermission):
+    """
+    Allow HR/Admin or Support access.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        return has_hr_access(user) or is_support(user)

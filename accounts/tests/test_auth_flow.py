@@ -1,5 +1,8 @@
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from accounts.models import User
 
 
 class AuthFlowTests(APITestCase):
@@ -46,6 +49,16 @@ class AuthFlowTests(APITestCase):
         }
         resp_emp = self.client.post(self.register_url, emp_payload, format="json")
         self.assertEqual(resp_emp.status_code, status.HTTP_201_CREATED)
+
+        self.support_user = User.objects.create_user(
+            email="support@example.com",
+            password="SupportPass123!",
+            role=User.Role.EMPLOYEE,
+            first_name="Support",
+            last_name="User",
+        )
+        support_group, _ = Group.objects.get_or_create(name="SUPPORT")
+        self.support_user.groups.add(support_group)
 
     # ---------- Helpers ----------
 
@@ -264,12 +277,18 @@ class AuthFlowTests(APITestCase):
             (status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED),
         )
 
-    def test_user_list_only_visible_to_hr(self):
+    def test_user_list_visible_to_hr_or_support(self):
         # employee tries to list users → forbidden
         emp_access, _ = self.login("emp@example.com", "EmpPass123!")
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {emp_access}")
         response_emp = self.client.get(self.user_list_url)
         self.assertEqual(response_emp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # support can list users
+        support_access, _ = self.login("support@example.com", "SupportPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {support_access}")
+        response_support = self.client.get(self.user_list_url)
+        self.assertEqual(response_support.status_code, status.HTTP_200_OK)
 
         # HR can list users
         hr_access, _ = self.login("hr@example.com", "HrPass123!")

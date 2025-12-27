@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from smarthr360_backend.api_mixins import ApiResponseMixin
 
 from .models import LoginActivity, User
-from .permissions import IsHRRole
+from .permissions import IsHRRole, IsHRRoleOrSupport
 from .schemas import (
     change_password_schema,
     email_verification_schema,
@@ -118,7 +118,7 @@ class MeView(ApiResponseMixin, generics.RetrieveAPIView):
 class UserListView(ApiResponseMixin, generics.ListAPIView):
     queryset = User.objects.all().order_by("email")
     serializer_class = UserSerializer
-    permission_classes = [IsHRRole]
+    permission_classes = [IsHRRoleOrSupport]
 
 
 @request_password_reset_schema

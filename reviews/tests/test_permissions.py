@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -47,6 +48,16 @@ class ReviewPermissionTests(APITestCase):
             first_name="Emp",
             last_name="Twenty",
         )
+
+        self.auditor_user = User.objects.create_user(
+            email="auditor@example.com",
+            password="AuditPass123!",
+            role=User.Role.EMPLOYEE,
+            first_name="Audit",
+            last_name="User",
+        )
+        auditor_group, _ = Group.objects.get_or_create(name="AUDITOR")
+        self.auditor_user.groups.add(auditor_group)
 
         self.manager_profile = EmployeeProfile.objects.create(
             user=self.manager_user,
@@ -230,3 +241,27 @@ class ReviewPermissionTests(APITestCase):
         self.auth("manager4@example.com", "ManagerPass123!")
         resp_del = self.client.delete(f"/api/reviews/goals/{goal_id}/")
         self.assertEqual(resp_del.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_auditor_can_view_reviews_read_only(self):
+        review_id = self.create_review_as_manager()
+        self.auth("auditor@example.com", "AuditPass123!")
+
+        resp_list = self.client.get(self.reviews_url)
+        self.assertEqual(resp_list.status_code, status.HTTP_200_OK)
+
+        resp_detail = self.client.get(f"{self.reviews_url}{review_id}/")
+        self.assertEqual(resp_detail.status_code, status.HTTP_200_OK)
+
+        resp_create = self.client.post(
+            self.reviews_url,
+            {"employee_id": self.emp_profile.id, "cycle_id": self.cycle.id},
+            format="json",
+        )
+        self.assertEqual(resp_create.status_code, status.HTTP_403_FORBIDDEN)
+
+        resp_patch = self.client.patch(
+            f"{self.reviews_url}{review_id}/",
+            {"manager_comment": "audit"},
+            format="json",
+        )
+        self.assertEqual(resp_patch.status_code, status.HTTP_403_FORBIDDEN)

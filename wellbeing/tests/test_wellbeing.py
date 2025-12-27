@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -38,6 +39,15 @@ class WellbeingModuleTests(APITestCase):
             first_name="Emp",
             last_name="Two",
         )
+        self.auditor_user = User.objects.create_user(
+            email="auditor@example.com",
+            password="AuditPass123!",
+            role=User.Role.EMPLOYEE,
+            first_name="Audit",
+            last_name="User",
+        )
+        auditor_group, _ = Group.objects.get_or_create(name="AUDITOR")
+        self.auditor_user.groups.add(auditor_group)
 
         self.department = Department.objects.create(
             name="IT",
@@ -156,6 +166,25 @@ class WellbeingModuleTests(APITestCase):
         # Envelope: stats_resp.data["data"]["..."]
         self.assertEqual(stats_resp.data["data"]["count_responses"], 2)
         self.assertEqual(len(stats_resp.data["data"]["questions"]), 2)
+
+    def test_auditor_can_view_stats(self):
+        self.auth_as(self.emp1_user)
+        self.client.post(
+            f"/api/wellbeing/surveys/{self.survey.id}/submit/",
+            {"answers": {str(self.q1.id): "4"}},
+            format="json",
+        )
+
+        self.auth_as(self.auditor_user, password="AuditPass123!")
+        stats_resp = self.client.get(
+            f"/api/wellbeing/surveys/{self.survey.id}/stats/"
+        )
+        self.assertEqual(stats_resp.status_code, status.HTTP_200_OK)
+
+        team_resp = self.client.get(
+            f"/api/wellbeing/surveys/{self.survey.id}/team-stats/"
+        )
+        self.assertEqual(team_resp.status_code, status.HTTP_200_OK)
 
     def test_manager_team_stats_filtered_by_department(self):
         # Two employees in same department submit

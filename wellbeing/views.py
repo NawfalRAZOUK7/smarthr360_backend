@@ -6,7 +6,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
-from accounts.access import has_hr_access, is_manager
+from accounts.access import has_hr_access, is_auditor, is_manager
 from accounts.models import User
 from hr.models import EmployeeProfile
 from smarthr360_backend.api_mixins import ApiResponseMixin
@@ -179,8 +179,8 @@ class SurveyStatsView(ApiResponseMixin, APIView):
 
     def get(self, request, survey_id):
         user = request.user
-        if not has_hr_access(user):
-            raise PermissionDenied("Only HR or Admin can view global wellbeing stats.")
+        if not (has_hr_access(user) or is_auditor(user)):
+            raise PermissionDenied("Only HR, Admin, or Auditors can view global wellbeing stats.")
 
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
         responses = SurveyResponse.objects.filter(survey=survey)
@@ -236,12 +236,12 @@ class TeamStatsView(ApiResponseMixin, APIView):
         survey = get_object_or_404(WellbeingSurvey, pk=survey_id)
 
         # Team filtering
-        if has_hr_access(user):
+        if has_hr_access(user) or is_auditor(user):
             team_profiles = EmployeeProfile.objects.all()
         elif is_manager(user) and hasattr(user, "employee_profile"):
             team_profiles = EmployeeProfile.objects.filter(manager=user.employee_profile)
         else:
-            raise PermissionDenied("Only managers (or HR/Admin) can view team stats.")
+            raise PermissionDenied("Only managers, HR/Admin, or Auditors can view team stats.")
 
         team_size = team_profiles.count()
         dept_ids = {p.department_id for p in team_profiles if p.department_id}

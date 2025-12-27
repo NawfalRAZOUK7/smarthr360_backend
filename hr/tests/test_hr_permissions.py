@@ -1,5 +1,6 @@
 # hr/tests/test_hr_permissions.py
 
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -71,6 +72,16 @@ class HRPermissionsTests(APITestCase):
         resp_other_emp = self.client.post(self.register_url, other_emp_payload, format="json")
         self.assertEqual(resp_other_emp.status_code, status.HTTP_201_CREATED)
 
+        self.auditor_user = User.objects.create_user(
+            email="auditor@example.com",
+            password="AuditPass123!",
+            role=User.Role.EMPLOYEE,
+            first_name="Audit",
+            last_name="User",
+        )
+        auditor_group, _ = Group.objects.get_or_create(name="AUDITOR")
+        self.auditor_user.groups.add(auditor_group)
+
         # Retrieve User instances from DB
         self.hr_user = User.objects.get(email="hr@example.com")
         self.manager_user = User.objects.get(email="manager@example.com")
@@ -125,6 +136,12 @@ class HRPermissionsTests(APITestCase):
         # hr + manager + 2 employees = 4 profiles
         self.assertEqual(len(results), 4)
 
+    def test_auditor_can_list_all_employees(self):
+        authenticate(self.client, "auditor@example.com", "AuditPass123!")
+
+        response = self.client.get(self.employees_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_employee_cannot_list_all_employees(self):
         authenticate(self.client, "teamemp@example.com", "EmpPass123!")
 
@@ -164,6 +181,24 @@ class HRPermissionsTests(APITestCase):
         self.assertIn("teamemp@example.com", emails)
         self.assertNotIn("otheremp@example.com", emails)
         self.assertNotIn("hr@example.com", emails)
+
+    def test_auditor_cannot_create_employee_profile(self):
+        authenticate(self.client, "auditor@example.com", "AuditPass123!")
+
+        new_user = User.objects.create_user(
+            email="auditorcreate@example.com",
+            password="TempPass123!",
+            role=User.Role.EMPLOYEE,
+            first_name="New",
+            last_name="Person",
+        )
+        payload = {
+            "user_id": new_user.id,
+            "department": self.dept.id,
+            "job_title": "New Joiner",
+        }
+        response = self.client.post(self.employees_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_manager_can_access_team_member_but_not_other_employee(self):
         authenticate(self.client, "manager@example.com", "ManagerPass123!")

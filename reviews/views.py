@@ -5,7 +5,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.access import has_hr_access, has_manager_access, is_manager
+from accounts.access import has_hr_access, has_manager_access, is_auditor, is_manager
 from hr.models import EmployeeProfile
 from smarthr360_backend.api_mixins import ApiResponseMixin
 
@@ -59,7 +59,7 @@ def _reviews_queryset_for_user(user):
     ).prefetch_related("items")
 
     # HR & Admin → all reviews
-    if has_hr_access(user):
+    if has_hr_access(user) or is_auditor(user):
         return qs
 
     # Manager → reviews where they are the manager
@@ -157,6 +157,9 @@ class PerformanceReviewDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIVi
 
         user = self.request.user
         if has_hr_access(user):
+            return review
+
+        if is_auditor(user) and self.request.method in permissions.SAFE_METHODS:
             return review
 
         if (
@@ -296,6 +299,9 @@ class ReviewItemListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
         if has_hr_access(user):
             return qs
 
+        if is_auditor(user):
+            return qs
+
         if (
             is_manager(user)
             and hasattr(user, "employee_profile")
@@ -387,7 +393,7 @@ class ReviewItemDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIVi
 def _goals_queryset_for_user(user):
     qs = Goal.objects.select_related("employee__user", "cycle")
 
-    if has_hr_access(user):
+    if has_hr_access(user) or is_auditor(user):
         return qs
 
     if is_manager(user) and hasattr(user, "employee_profile"):
@@ -485,6 +491,9 @@ class GoalDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
 
         if has_hr_access(user):
+            return goal
+
+        if is_auditor(user) and self.request.method in permissions.SAFE_METHODS:
             return goal
 
         if is_manager(user) and hasattr(user, "employee_profile"):

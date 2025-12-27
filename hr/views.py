@@ -9,10 +9,17 @@ from accounts.access import (
     has_employee_access,
     has_hr_access,
     has_manager_access,
+    is_auditor,
     is_manager,
 )
 from accounts.models import User
-from accounts.permissions import EmployeeProfileAccessPermission, IsHRRole, IsManagerOrAbove
+from accounts.permissions import (
+    EmployeeProfileAccessPermission,
+    IsHROrAuditorReadOnly,
+    IsHRRole,
+    IsManagerOrAuditorReadOnly,
+    IsManagerOrAbove,
+)
 from smarthr360_backend.api_mixins import ApiResponseMixin
 
 from .models import Department, EmployeeProfile, EmployeeSkill, FutureCompetency, Skill
@@ -42,7 +49,11 @@ class DepartmentListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
 class DepartmentDetailView(ApiResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [IsHRRole]
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsHRRole()]
 
 
 # --------------------------------------------------------------------------------------
@@ -83,7 +94,7 @@ class EmployeeMeView(ApiResponseMixin, APIView):
 
 class EmployeeListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
     serializer_class = EmployeeProfileSerializer
-    permission_classes = [IsHRRole]
+    permission_classes = [IsHROrAuditorReadOnly]
 
     def get_queryset(self):
         qs = EmployeeProfile.objects.select_related("user", "department")
@@ -138,12 +149,12 @@ class EmployeeDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
 
 class MyTeamListView(ApiResponseMixin, generics.ListAPIView):
     serializer_class = EmployeeProfileSerializer
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrAbove]
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get_queryset(self):
         user = self.request.user
 
-        if has_hr_access(user):
+        if has_hr_access(user) or is_auditor(user):
             return EmployeeProfile.objects.select_related("user", "department").all()
 
         if hasattr(user, "employee_profile"):
@@ -226,7 +237,7 @@ class EmployeeSkillListCreateView(ApiResponseMixin, generics.ListCreateAPIView):
             "employee__user", "employee__department", "skill"
         )
 
-        if has_hr_access(user):
+        if has_hr_access(user) or is_auditor(user):
             return qs
 
         if is_manager(user) and hasattr(user, "employee_profile"):
@@ -273,7 +284,7 @@ class EmployeeSkillDetailView(ApiResponseMixin, generics.RetrieveUpdateAPIView):
             "employee__user", "employee__department", "skill"
         )
 
-        if has_hr_access(user):
+        if has_hr_access(user) or is_auditor(user):
             return qs
 
         if is_manager(user) and hasattr(user, "employee_profile"):

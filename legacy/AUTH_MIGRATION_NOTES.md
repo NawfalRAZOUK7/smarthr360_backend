@@ -16,6 +16,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - Sync base (auth): HR → HR, MANAGER → MANAGER, EMPLOYEE → EMPLOYEE. ADMIN bypass toutes permissions.
 - Permissions dédiées: `IsAuditorReadOnly`, `IsSecurityAdmin`, `IsSupport` + helpers d’accès (roles + groupes).
 - Statut (auth): HR a accès aux endpoints manager via `IsManagerOrAbove`.
+- Statut (auth): AUDITOR en lecture seule sur HR/Reviews/Wellbeing; SUPPORT autorisé sur `/api/auth/users/`.
 
 ## 3) Flux d’authentification
 - Couverture `auth` (à conserver): register, login, refresh, logout (blacklist), me, reset mot de passe, vérification email, suivi des login, lockout custom.
@@ -44,6 +45,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 4) Standardiser les endpoints et contrats: login/register/reset/verify email, `/me`, logout blacklist; choisir l’enveloppe de réponse unique. Mettre à jour Postman/tests.
 5) Sécurité applicative: aligner lockout (seuil/durée), CSRF/CORS/headers, logs de sécurité (APM si souhaité), monitoring (prometheus si requis).
 6) Tests: ajouter/adapter les tests d’auth (login email, lockout, reset, verify email, logout blacklist, permissions par rôle/groupe), et les tests d’intégration avec future_skills.
+7) Qualité: fixer les warnings de pagination (ordering EmployeeProfile) et ajouter `auth/staticfiles/` pour collectstatic.
 
 ## 8) Points de migration / data
 - S’assurer que tous les utilisateurs ont un email unique (sinon dédoublonner). Remplir username = email pendant la transition si nécessaire.
