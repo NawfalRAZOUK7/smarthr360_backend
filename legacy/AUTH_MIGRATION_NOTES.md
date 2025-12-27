@@ -52,7 +52,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 
 Statut (auth):
 - [x] 1) django-axes activé (apps/middleware/backends) + lockout aligné.
-- [x] 2) `accounts.User` en place côté auth; script de migration prediction_skills à planifier.
+- [x] 2) `accounts.User` en place côté auth; commande `migrate_prediction_users` disponible.
 - [x] 3) Sync rôle ↔ groupes + permissions DRF alignées.
 - [x] 4) Endpoints auth + enveloppe standard + docs/Postman à jour.
 - [x] 5) Sécurité/lockout/headers alignés.
@@ -63,6 +63,11 @@ Statut (auth):
 - S’assurer que tous les utilisateurs ont un email unique (sinon dédoublonner). Remplir username = email pendant la transition si nécessaire.
 - Recréer les superusers/admin techniques avec le nouveau modèle.
 - Nettoyer les tokens/mots de passe de test avant prod.
+
+### Script de migration (auth)
+- Commande: `python manage.py migrate_prediction_users --source-url <DB_URL>`
+- Par defaut: dry-run. Utiliser `--apply` pour ecrire.
+- Options utiles: `--update-existing`, `--match-username`, `--mark-verified`, `--default-email-domain`, `--limit`.
  
 ### Checklist data (prediction_skills → auth)
 1) **Inventaire source**  
