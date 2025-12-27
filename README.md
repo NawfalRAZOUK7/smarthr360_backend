@@ -435,7 +435,7 @@ Content-Type: application/json
 | POST   | `/password-reset/`             | Reset password with token   | Public        |
 | POST   | `/request-email-verification/` | Request verification email  | Public        |
 | POST   | `/email-verification/`         | Verify email with token     | Public        |
-| GET    | `/users/`                      | List all users              | HR Only       |
+| GET    | `/users/`                      | List all users              | HR or SUPPORT |
 
 ### Departments (`/api/hr/departments/`)
 
@@ -451,11 +451,11 @@ Content-Type: application/json
 
 | Method | Endpoint | Description                   | Access        |
 | ------ | -------- | ----------------------------- | ------------- |
-| GET    | `/`      | List employees (with filters) | HR Only       |
+| GET    | `/`      | List employees (with filters) | HR or AUDITOR (read-only) |
 | POST   | `/`      | Create employee profile       | HR Only       |
 | GET    | `/me/`   | Get own profile               | Authenticated |
 | PATCH  | `/me/`   | Update own profile            | Authenticated |
-| GET    | `/<id>/` | Get employee details          | Manager+      |
+| GET    | `/<id>/` | Get employee details          | Owner/Manager/HR (AUDITOR read-only) |
 | PATCH  | `/<id>/` | Update employee               | HR/Manager    |
 | DELETE | `/<id>/` | Delete employee               | HR Only       |
 
@@ -486,6 +486,8 @@ Content-Type: application/json
 | PATCH  | `/<skill_id>/` | Update skill proficiency   | Manager/HR |
 | DELETE | `/<skill_id>/` | Remove skill from employee | Manager/HR |
 
+**Access Note**: AUDITOR can view employee skills (read-only) but cannot create or update.
+
 ### Future Competencies (`/api/hr/future-competencies/`)
 
 | Method | Endpoint | Description            | Access        |
@@ -509,9 +511,9 @@ Content-Type: application/json
 
 | Method | Endpoint         | Description                     | Access           |
 | ------ | ---------------- | ------------------------------- | ---------------- |
-| GET    | `/`              | List reviews (filtered by role) | Authenticated    |
+| GET    | `/`              | List reviews (filtered by role) | Authenticated (AUDITOR read-only) |
 | POST   | `/`              | Create review                   | Manager/HR       |
-| GET    | `/<id>/`         | Get review details              | Owner/Manager/HR |
+| GET    | `/<id>/`         | Get review details              | Owner/Manager/HR (AUDITOR read-only) |
 | PATCH  | `/<id>/`         | Update review                   | Manager/HR       |
 | DELETE | `/<id>/`         | Delete review                   | HR Only          |
 | POST   | `/<id>/submit/`  | Submit review                   | Manager/HR       |
@@ -521,7 +523,7 @@ Content-Type: application/json
 
 | Method | Endpoint      | Description        | Access           |
 | ------ | ------------- | ------------------ | ---------------- |
-| GET    | `/`           | List review items  | Owner/Manager/HR |
+| GET    | `/`           | List review items  | Owner/Manager/HR (AUDITOR read-only) |
 | POST   | `/`           | Add item to review | Manager/HR       |
 | PATCH  | `/<item_id>/` | Update item        | Manager/HR       |
 | DELETE | `/<item_id>/` | Delete item        | Manager/HR       |
@@ -530,9 +532,9 @@ Content-Type: application/json
 
 | Method | Endpoint | Description                   | Access              |
 | ------ | -------- | ----------------------------- | ------------------- |
-| GET    | `/`      | List goals (filtered by role) | Authenticated       |
+| GET    | `/`      | List goals (filtered by role) | Authenticated (AUDITOR read-only) |
 | POST   | `/`      | Create goal                   | Manager/HR/Employee |
-| GET    | `/<id>/` | Get goal details              | Owner/Manager/HR    |
+| GET    | `/<id>/` | Get goal details              | Owner/Manager/HR (AUDITOR read-only) |
 | PATCH  | `/<id>/` | Update goal                   | Owner/Manager/HR    |
 | DELETE | `/<id>/` | Delete goal                   | Owner/Manager/HR    |
 
@@ -550,7 +552,7 @@ Content-Type: application/json
 | GET    | `/<id>/`       | Get survey details    | Authenticated |
 | PATCH  | `/<id>/`       | Update survey         | HR/Admin      |
 | DELETE | `/<id>/`       | Delete survey         | HR/Admin      |
-| GET    | `/<id>/stats/` | Get survey statistics | HR/Admin      |
+| GET    | `/<id>/stats/` | Get survey statistics | HR/Admin/AUDITOR |
 
 ### Survey Responses (`/api/wellbeing/responses/`)
 

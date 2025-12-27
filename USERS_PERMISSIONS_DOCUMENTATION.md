@@ -2,7 +2,7 @@
 
 **Complete User Roles and Access Control Guide**
 
-Last Updated: November 26, 2025
+Last Updated: December 27, 2025
 
 ---
 
@@ -59,6 +59,12 @@ SmartHR360 implements a hierarchical role-based access control (RBAC) system wit
 - **Primary Use**: System configuration, user management, and all HR functions
 - **Rank**: 4 (highest)
 
+### Special Groups (Non-role)
+
+- **AUDITOR**: Read-only access to HR, Reviews, and Wellbeing endpoints (list/detail only)
+- **SUPPORT**: Can list users via `GET /api/auth/users/`
+- **SECURITY_ADMIN**: Reserved for security-focused endpoints (future use)
+
 ---
 
 ## Role Hierarchy
@@ -100,7 +106,7 @@ EMPLOYEE (Rank 1)
 | Login/Logout                 | ✅ Public       | ✅ Public              | ✅ Public   | ✅ Public   |
 | View own profile             | ✅              | ✅                     | ✅          | ✅          |
 | Change own password          | ✅              | ✅                     | ✅          | ✅          |
-| List all users               | ❌              | ❌                     | ✅          | ✅          |
+| List all users (SUPPORT group) | ❌              | ❌                     | ✅          | ✅          |
 | Reset password (self)        | ✅ Public       | ✅ Public              | ✅ Public   | ✅ Public   |
 | **Departments**              |
 | View departments             | ✅              | ✅                     | ✅          | ✅          |
@@ -176,6 +182,11 @@ EMPLOYEE (Rank 1)
 - ✅ (DRAFT) = Access restricted to DRAFT status items
 - ❌ = No access
 
+**Special groups**:
+
+- **AUDITOR**: Read-only access to HR/Reviews/Wellbeing (list/detail)
+- **SUPPORT**: Can list users via `GET /api/auth/users/`
+
 ---
 
 ## Module-Specific Permissions
@@ -200,11 +211,11 @@ EMPLOYEE (Rank 1)
 - `POST /api/auth/change-password/` - Change own password
 - `POST /api/auth/logout/` - Logout
 
-**HR and ADMIN Only**:
+**HR/ADMIN or SUPPORT group**:
 
 - `GET /api/auth/users/` - List all users
 
-**Permission Class**: `IsHRRole`
+**Permission Class**: `IsHRRoleOrSupport`
 
 ---
 
@@ -219,7 +230,8 @@ EMPLOYEE (Rank 1)
 
 - List: `IsAuthenticated`
 - Create: `IsHRRole`
-- Detail: `IsHRRole`
+- Detail (GET): `IsAuthenticated`
+- Detail (PATCH/DELETE): `IsHRRole`
 
 ---
 
@@ -239,13 +251,14 @@ EMPLOYEE (Rank 1)
 **All Profiles**:
 
 - **HR/ADMIN**: Full CRUD access
+- **AUDITOR**: Read-only access to all profiles
 - Query filters available: `department`, `is_active`, `manager`
 
 **Permission Classes**:
 
-- List/Create: `IsHRRole`
+- List/Create: `IsHROrAuditorReadOnly` (auditor = read-only)
 - Detail: `IsAuthenticated` + `EmployeeProfileAccessPermission`
-- My Team: `IsManagerOrAbove`
+- My Team: `IsManagerOrAuditorReadOnly`
 
 **Object-Level Permission**: `EmployeeProfileAccessPermission`
 
@@ -274,6 +287,7 @@ EMPLOYEE (Rank 1)
 - **EMPLOYEE**: Own skills only
 - **MANAGER**: Team member skills
 - **HR/ADMIN**: All employee skills
+- **AUDITOR**: Read-only access to all employee skills
 
 **Create/Update Access**:
 
@@ -319,6 +333,7 @@ EMPLOYEE (Rank 1)
 - **EMPLOYEE**: Own reviews only
 - **MANAGER**: Reviews where they are the manager
 - **HR/ADMIN**: All reviews
+- **AUDITOR**: Read-only access to all reviews
 
 **Create Access**:
 
@@ -353,6 +368,7 @@ EMPLOYEE (Rank 1)
 #### Review Items
 
 **Access Control**: Same visibility as parent review
+**AUDITOR**: Read-only access to review items
 
 **Restrictions**:
 
@@ -371,6 +387,7 @@ EMPLOYEE (Rank 1)
 - **EMPLOYEE**: Own goals only
 - **MANAGER**: Team goals
 - **HR/ADMIN**: All goals
+- **AUDITOR**: Read-only access to all goals
 
 **Create Access**:
 
@@ -419,7 +436,7 @@ EMPLOYEE (Rank 1)
 
 **Global Stats** (`/api/wellbeing/surveys/{id}/stats/`):
 
-- **HR/ADMIN Only**: View overall survey statistics
+- **HR/ADMIN/AUDITOR**: View overall survey statistics
 - Shows aggregated data for all responses
 - Includes averages, distributions, and counts
 
@@ -427,13 +444,14 @@ EMPLOYEE (Rank 1)
 
 - **MANAGER**: View aggregated stats for their team's departments
 - **HR/ADMIN**: View stats for all employees
+- **AUDITOR**: View stats for all employees (read-only)
 - Only SCALE_1_5 questions show aggregate averages
 - Privacy-preserving: Only shows aggregated department-level data
 
 **Permission Classes**:
 
-- Global Stats: `IsAuthenticated` (with HR/ADMIN role check)
-- Team Stats: `IsAuthenticated` (with MANAGER+ role check)
+- Global Stats: `IsAuthenticated` (with HR/ADMIN/AUDITOR role check)
+- Team Stats: `IsAuthenticated` (with MANAGER+/AUDITOR role check)
 
 ---
 
@@ -449,6 +467,7 @@ class EmployeeProfileAccessPermission:
     - HR/ADMIN: Full access to all profiles
     - EMPLOYEE: Only their own profile
     - MANAGER: Only their direct team members
+    - AUDITOR: Read-only access to all profiles
     """
 ```
 
@@ -459,7 +478,8 @@ class EmployeeProfileAccessPermission:
 1. If user is HR or ADMIN → Allow
 2. If user is viewing their own profile → Allow
 3. If user is MANAGER and the profile's manager is the user → Allow
-4. Otherwise → Deny
+4. If user is AUDITOR and request is read-only → Allow
+5. Otherwise → Deny
 
 ---
 
@@ -470,6 +490,7 @@ Custom queryset filtering based on role:
 ```python
 def _reviews_queryset_for_user(user):
     # HR & Admin → all reviews
+    # Auditor → all reviews (read-only)
     # Manager → reviews where they are the manager
     # Employee → only own reviews
 ```
@@ -541,7 +562,14 @@ Many endpoints use `SAFE_METHODS` (GET, HEAD, OPTIONS) for read access:
 
 ---
 
-### 5. **Anonymous Privacy Rules**
+### 5. **Auditor / Support Group Rules**
+
+- **AUDITOR**: Read-only access to HR, Reviews, and Wellbeing endpoints (list/detail)
+- **SUPPORT**: Can list users via `GET /api/auth/users/`
+
+---
+
+### 6. **Anonymous Privacy Rules**
 
 Wellbeing survey responses are **strictly anonymous**:
 
@@ -648,6 +676,20 @@ Wellbeing survey responses are **strictly anonymous**:
 
 ---
 
+### Example 5: Auditor Alex (AUDITOR Group)
+
+**Can Do**:
+
+- ✅ View all employee profiles (read-only)
+- ✅ View performance reviews, review items, and goals (read-only)
+- ✅ View wellbeing global and team stats (read-only)
+
+**Cannot Do**:
+
+- ❌ Create or update employee profiles
+- ❌ Create or update reviews, goals, or review items
+- ❌ Create or manage wellbeing surveys
+
 ## Role Assignment
 
 ### Default Role
@@ -681,6 +723,12 @@ Wellbeing survey responses are **strictly anonymous**:
 3. `IsManagerOrAbove`: Allow MANAGER, HR, and ADMIN users
 4. `ReadOnlyOrAdmin`: Allow read for all authenticated, write for ADMIN only
 5. `EmployeeProfileAccessPermission`: Object-level permission for employee profiles
+6. `IsAuditorReadOnly`: Allow auditors read-only access
+7. `IsSecurityAdmin`: Allow security admins (or global admins)
+8. `IsSupport`: Allow support group (or global admins)
+9. `IsHROrAuditorReadOnly`: HR/Admin write, auditors read-only
+10. `IsManagerOrAuditorReadOnly`: Manager/HR/Admin write, auditors read-only
+11. `IsHRRoleOrSupport`: HR/Admin or Support access
 
 ### Role Helper Methods
 
@@ -774,6 +822,8 @@ Many views use custom `get_queryset()` methods to filter data based on user role
    - Employee accessing `/api/hr/employees/`: 403 Forbidden
    - Manager accessing `/api/hr/employees/`: 403 Forbidden
    - HR accessing `/api/hr/employees/`: 200 OK with all employees
+   - Auditor accessing `/api/hr/employees/`: 200 OK (read-only)
+   - Support accessing `/api/auth/users/`: 200 OK
 
 ---
 
@@ -811,7 +861,8 @@ Many views use custom `get_queryset()` methods to filter data based on user role
 3. **All employees submit responses**: `POST /api/wellbeing/surveys/1/submit/` ✅ (Anonymous)
 4. **Manager views team stats**: `GET /api/wellbeing/surveys/1/team-stats/` ✅ (Aggregated only)
 5. **HR views global stats**: `GET /api/wellbeing/surveys/1/stats/` ✅
-6. **Employee tries to view stats**: `GET /api/wellbeing/surveys/1/stats/` ❌ (403 Forbidden)
+6. **Auditor views global stats**: `GET /api/wellbeing/surveys/1/stats/` ✅ (Read-only)
+7. **Employee tries to view stats**: `GET /api/wellbeing/surveys/1/stats/` ❌ (403 Forbidden)
 
 ---
 
