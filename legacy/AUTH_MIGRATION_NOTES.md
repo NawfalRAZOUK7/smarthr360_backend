@@ -63,6 +63,47 @@ Statut (auth):
 - S’assurer que tous les utilisateurs ont un email unique (sinon dédoublonner). Remplir username = email pendant la transition si nécessaire.
 - Recréer les superusers/admin techniques avec le nouveau modèle.
 - Nettoyer les tokens/mots de passe de test avant prod.
+ 
+### Checklist data (prediction_skills → auth)
+1) **Inventaire source**  
+   - Tables clés: `auth_user`, `auth_group`, `auth_user_groups` (prediction_skills).  
+   - Export minimal: `id, username, email, first_name, last_name, is_active, is_staff, is_superuser, last_login, date_joined`.  
+
+2) **Règles de mapping rôle ↔ groupes**  
+   - Groupes `DRH` / `RESPONSABLE_RH` → rôle `HR` (+ groupe `HR`).  
+   - Groupe `MANAGER` → rôle `MANAGER` (+ groupe `MANAGER`).  
+   - Aucun groupe → rôle `EMPLOYEE`.  
+   - `is_superuser=True` → rôle `ADMIN` (bypass permissions).  
+
+3) **Email / username**  
+   - Normaliser email (lowercase/trim).  
+   - Si email manquant → forcer une règle (ex: `username@placeholder.local`) + liste à corriger manuellement.  
+   - Username requis côté auth:  
+     - Si username existant unique → conserver.  
+     - Sinon → `username = email` ou `email + suffix` en cas de collision.  
+
+4) **Dédoublonnage**  
+   - Détecter doublons email (case-insensitive).  
+   - Stratégie: garder `is_active`=True / `last_login` le plus récent.  
+   - Documenter les comptes fusionnés / supprimés.  
+
+5) **Mots de passe / tokens**  
+   - Conserver le hash `password` si même algo Django (relogin non requis).  
+   - Réinitialiser `token_blacklist`, `axes_accessattempt`, `LoginAttempt`, `LoginActivity` en migration (optionnel mais recommandé).  
+   - Obliger un logout global après migration si changement de clés JWT.  
+
+6) **Email vérifié**  
+   - Si source a un indicateur de vérification: mapper vers `is_email_verified` + `email_verified_at`.  
+   - Sinon: `is_email_verified=False` (puis déclencher vérif).  
+
+7) **Validation post‑migration**  
+   - Comparer counts (users actifs / inactifs).  
+   - Tester login email + username (chantillon).  
+   - Vérifier sync groupes/roles (signal).  
+
+8) **Rollback**  
+   - Snapshot DB avant migration.  
+   - Script de rollback (restore + invalidate tokens).  
 
 ## 9) Rollout conseillé
 - Phase 1 (dev): activer django-axes + enveloppe standard dans `auth`; tests end-to-end email login; mapping rôles↔groupes.
