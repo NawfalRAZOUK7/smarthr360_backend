@@ -26,6 +26,7 @@ class AuthFlowTests(APITestCase):
         # Create HR user via REGISTER endpoint
         hr_payload = {
             "email": "hr@example.com",
+            "username": "hr_user",
             "first_name": "HR",
             "last_name": "User",
             "password": "HrPass123!",
@@ -37,6 +38,7 @@ class AuthFlowTests(APITestCase):
         # Create EMPLOYEE user via REGISTER endpoint
         emp_payload = {
             "email": "emp@example.com",
+            "username": "emp_user",
             "first_name": "Emp",
             "last_name": "User",
             "password": "EmpPass123!",
@@ -105,6 +107,7 @@ class AuthFlowTests(APITestCase):
     def test_register_employee_success(self):
         payload = {
             "email": "newemp@example.com",
+            "username": "new_emp",
             "first_name": "New",
             "last_name": "Employee",
             "password": "NewPass123!",
@@ -121,7 +124,7 @@ class AuthFlowTests(APITestCase):
         user = data["user"]
         self.assertEqual(user["email"], payload["email"])
         self.assertEqual(user["role"], "EMPLOYEE")
-        self.assertEqual(user["username"], payload["email"])
+        self.assertEqual(user["username"], payload["username"])
         self.assertIn("tokens", data)
 
     def test_register_with_username_sets_username(self):

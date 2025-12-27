@@ -21,7 +21,7 @@ from .serializers import (
 register_schema = extend_schema(
     summary="Register a new user",
     description=(
-        "Create a new user account. Accepts email (required) and an optional username. "
+        "Create a new user account. Accepts email and username (both required). "
         "Returns user data and JWT tokens upon successful registration."
     ),
     request=RegisterSerializer,

@@ -34,7 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     """Used for /register endpoint."""
     password = serializers.CharField(write_only=True, min_length=8)
-    username = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    username = serializers.CharField()
 
     class Meta:
         model = User
@@ -79,11 +79,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         return normalized_email
 
     def validate_username(self, value):
-        if value is None:
-            return value
         username = value.strip()
         if not username:
-            return ""
+            raise serializers.ValidationError("Le username est requis.")
         if User.objects.filter(username__iexact=username).exists():
             raise serializers.ValidationError("Un utilisateur avec ce username existe déjà.")
         return username

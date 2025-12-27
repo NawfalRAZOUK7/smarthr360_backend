@@ -19,7 +19,8 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - Couverture `auth` (à conserver): register, login, refresh, logout (blacklist), me, reset mot de passe, vérification email, suivi des login, lockout custom.
 - Couverture `prediction_skills` (à intégrer si besoin): monitoring APM/logs, éventuelle personnalisation middleware.
 - Actions prévues: exposer le login par email, conserver refresh/blacklist, garder `ApiResponseMixin` pour les enveloppes de réponse, ajouter endpoints reset/vérif email si absents côté consommateur.
- - Statut (auth): login accepte email ou username; register accepte username (optionnel).
+- Statut (auth): login accepte email ou username; register accepte username (optionnel).
+ - Statut (auth): username requis à l’inscription.
 
 ## 4) Sécurité / verrouillage
 - `auth`: `LoginAttempt` (lock après N échecs), email d’alerte, `LoginActivity` (audit).
