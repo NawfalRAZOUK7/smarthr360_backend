@@ -146,8 +146,8 @@ Base Path: `/api/auth/`
 ### 5. **List All Users**
 
 - **Endpoint**: `GET /api/auth/users/`
-- **Authentication**: Required (HR or ADMIN only)
-- **Description**: Retrieve a list of all registered users
+- **Authentication**: Required (HR/ADMIN or SUPPORT group)
+- **Description**: Retrieve a list of all registered users (HR/ADMIN or SUPPORT)
 - **Response**: Array of user objects
 - **Status Codes**:
   - `200 OK`: Success
@@ -316,8 +316,9 @@ Base Path: `/api/hr/`
 #### 2. **Department Detail**
 
 - **Endpoint**: `GET /api/hr/departments/{id}/`
-- **Authentication**: Required (HR or ADMIN only)
+- **Authentication**: Required
 - **Description**: Get department details
+- **Access Control**: Any authenticated user
 
 ---
 
@@ -383,8 +384,11 @@ Base Path: `/api/hr/`
 #### 4. **List/Create Employees**
 
 - **Endpoint**: `GET /api/hr/employees/`
-- **Authentication**: Required (HR or ADMIN only)
+- **Authentication**: Required (HR/ADMIN or AUDITOR read-only)
 - **Description**: List all employee profiles with filtering
+- **Access Control**:
+  - **HR/ADMIN**: View all employees
+  - **AUDITOR**: Read-only access to all employees
 - **Query Parameters**:
   - `department`: Filter by department code (e.g., `?department=IT`)
   - `is_active`: Filter by active status (e.g., `?is_active=true`)
@@ -429,6 +433,7 @@ Base Path: `/api/hr/`
   - **HR/ADMIN**: Can view any employee
   - **MANAGER**: Can view their direct team members
   - **EMPLOYEE**: Can view only their own profile
+  - **AUDITOR**: Read-only access to all employees
 - **Status Codes**:
   - `200 OK`: Success
   - `403 Forbidden`: Insufficient permissions
@@ -447,15 +452,16 @@ Base Path: `/api/hr/`
 #### 6. **My Team**
 
 - **Endpoint**: `GET /api/hr/employees/my-team/`
-- **Authentication**: Required (MANAGER, HR, or ADMIN)
+- **Authentication**: Required (MANAGER, HR, ADMIN, or AUDITOR read-only)
 - **Description**: List employees in current user's team
 - **Behavior**:
   - **HR/ADMIN**: Returns all employees
   - **MANAGER**: Returns only direct reports
+  - **AUDITOR**: Returns all employees (read-only)
 - **Response**: Array of employee profile objects
 - **Status Codes**:
   - `200 OK`: Success
-  - `403 Forbidden`: Not a manager or above
+  - `403 Forbidden`: Insufficient permissions
 
 ---
 
@@ -535,6 +541,7 @@ Base Path: `/api/hr/`
   - **HR/ADMIN**: View all employee skills
   - **MANAGER**: View team member skills
   - **EMPLOYEE**: View only their own skills
+  - **AUDITOR**: Read-only access to all employee skills
 - **Response**:
   ```json
   [
@@ -736,6 +743,7 @@ Base Path: `/api/reviews/`
   - **HR/ADMIN**: View all reviews
   - **MANAGER**: View reviews where they are the manager
   - **EMPLOYEE**: View only their own reviews
+  - **AUDITOR**: Read-only access to all reviews
 - **Response**:
   ```json
   [
@@ -788,7 +796,7 @@ Base Path: `/api/reviews/`
 - **Endpoint**: `GET /api/reviews/{id}/`
 - **Authentication**: Required
 - **Description**: Get performance review details
-- **Access Control**: Same as list endpoint
+- **Access Control**: Same as list endpoint (AUDITOR read-only)
 
 ---
 
@@ -863,7 +871,7 @@ Base Path: `/api/reviews/`
 - **Endpoint**: `GET /api/reviews/{review_id}/items/`
 - **Authentication**: Required
 - **Description**: List items (criteria) within a performance review
-- **Access Control**: Same visibility as parent review
+- **Access Control**: Same visibility as parent review (AUDITOR read-only)
 - **Response**:
   ```json
   [
@@ -944,6 +952,7 @@ Base Path: `/api/reviews/`
   - **HR/ADMIN**: View all goals
   - **MANAGER**: View team goals
   - **EMPLOYEE**: View own goals
+  - **AUDITOR**: Read-only access to all goals
 - **Query Parameters**:
   - `employee_id`: Filter by employee (e.g., `?employee_id=5`)
   - `cycle_id`: Filter by review cycle (e.g., `?cycle_id=1`)
@@ -1185,7 +1194,7 @@ Base Path: `/api/wellbeing/`
 #### 6. **Get Survey Stats**
 
 - **Endpoint**: `GET /api/wellbeing/surveys/{survey_id}/stats/`
-- **Authentication**: Required (HR or ADMIN only)
+- **Authentication**: Required (HR, ADMIN, or AUDITOR)
 - **Description**: Get global statistics for a survey
 - **Response**:
   ```json
@@ -1230,7 +1239,7 @@ Base Path: `/api/wellbeing/`
 #### 7. **Get Team Stats**
 
 - **Endpoint**: `GET /api/wellbeing/surveys/{survey_id}/team-stats/`
-- **Authentication**: Required (MANAGER, HR, or ADMIN)
+- **Authentication**: Required (MANAGER, HR, ADMIN, or AUDITOR)
 - **Description**: Get aggregated statistics for manager's team or department
 - **Response**:
   ```json
@@ -1247,6 +1256,7 @@ Base Path: `/api/wellbeing/`
 - **Access Control**:
   - **HR/ADMIN**: Stats for all employees
   - **MANAGER**: Stats for direct reports' departments
+  - **AUDITOR**: Stats for all employees (read-only)
 - **Aggregates**: Only computed for SCALE_1_5 questions (average scores)
 - **Status Codes**:
   - `200 OK`: Success

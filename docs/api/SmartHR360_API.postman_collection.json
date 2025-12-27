@@ -55,8 +55,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/register/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "register", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register",
+                ""
+              ]
             },
             "description": "Register a new user account. Returns user data and JWT tokens."
           },
@@ -94,8 +101,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/login/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "login", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login",
+                ""
+              ]
             },
             "description": "Authenticate user and receive JWT tokens. Automatically sets access_token variable."
           },
@@ -108,8 +122,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/auth/me/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "me", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me",
+                ""
+              ]
             },
             "description": "Get profile information of the currently authenticated user."
           },
@@ -131,8 +152,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/change-password/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "change-password", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "change-password",
+                ""
+              ]
             },
             "description": "Change password for authenticated user."
           },
@@ -157,8 +185,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/request-password-reset/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "request-password-reset", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "request-password-reset",
+                ""
+              ]
             },
             "description": "Request a password reset link via email."
           },
@@ -183,8 +218,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/password-reset/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "password-reset", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "password-reset",
+                ""
+              ]
             },
             "description": "Reset password using token from email."
           },
@@ -209,8 +251,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/request-email-verification/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "request-email-verification", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "request-email-verification",
+                ""
+              ]
             },
             "description": "Request an email verification link."
           },
@@ -235,8 +284,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/email-verification/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "email-verification", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "email-verification",
+                ""
+              ]
             },
             "description": "Verify email using token from email."
           },
@@ -258,26 +314,41 @@
             },
             "url": {
               "raw": "{{base_url}}/api/auth/logout/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "logout", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout",
+                ""
+              ]
             },
             "description": "Logout user by blacklisting refresh token."
           },
           "response": []
         },
         {
-          "name": "List All Users (HR Only)",
+          "name": "List All Users (HR or Support)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/auth/users/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "users", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "users",
+                ""
+              ]
             },
             "description": "Get list of all users. Requires HR role."
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN or SUPPORT group."
         }
       ],
       "description": "User authentication and account management endpoints"
@@ -292,8 +363,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/departments/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "departments", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "departments",
+                ""
+              ]
             },
             "description": "Get list of all departments"
           },
@@ -315,8 +393,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/departments/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "departments", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "departments",
+                ""
+              ]
             },
             "description": "Create a new department. Requires HR role."
           },
@@ -329,8 +414,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/departments/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "departments", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "departments",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -358,8 +451,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/departments/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "departments", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "departments",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -378,8 +479,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/departments/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "departments", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "departments",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -398,14 +507,21 @@
       "name": "HR - Employees",
       "item": [
         {
-          "name": "List Employees (HR Only)",
+          "name": "List Employees (HR or Auditor read-only)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/employees/?department=IT&is_active=true",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ""
+              ],
               "query": [
                 {
                   "key": "department",
@@ -439,7 +555,8 @@
             },
             "description": "List all employees with optional filters. Requires HR role."
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN can view all employees; AUDITOR has read-only access."
         },
         {
           "name": "Get My Employee Profile",
@@ -448,8 +565,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/employees/me/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", "me", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                "me",
+                ""
+              ]
             },
             "description": "Get current user's employee profile"
           },
@@ -471,8 +596,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/employees/me/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", "me", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                "me",
+                ""
+              ]
             },
             "description": "Update own employee profile (limited fields)"
           },
@@ -494,8 +627,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/employees/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ""
+              ]
             },
             "description": "Create employee profile. Requires HR role."
           },
@@ -508,8 +648,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/employees/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -537,8 +685,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/employees/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -563,8 +719,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/skills/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "skills", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "skills",
+                ""
+              ]
             },
             "description": "Get list of all skills"
           },
@@ -586,8 +749,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/skills/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "skills", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "skills",
+                ""
+              ]
             },
             "description": "Create a new skill. Requires HR role."
           },
@@ -600,8 +770,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ":employee_id", "skills", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ":employee_id",
+                "skills",
+                ""
+              ],
               "variable": [
                 {
                   "key": "employee_id",
@@ -611,7 +790,8 @@
             },
             "description": "Get all skills for a specific employee"
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN view all, MANAGER view team, EMPLOYEE view own, AUDITOR read-only."
         },
         {
           "name": "Add Skill to Employee",
@@ -629,8 +809,17 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "employees", ":employee_id", "skills", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "employees",
+                ":employee_id",
+                "skills",
+                ""
+              ],
               "variable": [
                 {
                   "key": "employee_id",
@@ -658,7 +847,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/employees/:employee_id/skills/:skill_id/",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "hr",
@@ -690,8 +881,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/hr/future-competencies/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "future-competencies", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "future-competencies",
+                ""
+              ]
             },
             "description": "Get list of future competencies"
           },
@@ -713,8 +911,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/hr/future-competencies/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "hr", "future-competencies", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr",
+                "future-competencies",
+                ""
+              ]
             },
             "description": "Create future competency. Requires HR role."
           },
@@ -733,8 +938,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/cycles/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", "cycles", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "cycles",
+                ""
+              ]
             },
             "description": "Get list of all review cycles"
           },
@@ -756,8 +968,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/reviews/cycles/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", "cycles", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "cycles",
+                ""
+              ]
             },
             "description": "Create review cycle. Requires HR/Admin role."
           },
@@ -770,12 +989,19 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ""
+              ]
             },
             "description": "List reviews filtered by role permissions"
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN view all, MANAGER view own team, EMPLOYEE view own, AUDITOR read-only."
         },
         {
           "name": "Create Performance Review",
@@ -793,8 +1019,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/reviews/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ""
+              ]
             },
             "description": "Create performance review"
           },
@@ -807,8 +1039,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -818,7 +1057,8 @@
             },
             "description": "Get specific review details"
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN, review manager, review owner, or AUDITOR (read-only)."
         },
         {
           "name": "Submit Review",
@@ -827,8 +1067,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/:id/submit/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ":id", "submit", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":id",
+                "submit",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -847,8 +1095,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/:id/approve/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ":id", "approve", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":id",
+                "approve",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -867,8 +1123,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/:review_id/items/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ":review_id", "items", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":review_id",
+                "items",
+                ""
+              ],
               "variable": [
                 {
                   "key": "review_id",
@@ -896,8 +1160,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/reviews/:review_id/items/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", ":review_id", "items", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":review_id",
+                "items",
+                ""
+              ],
               "variable": [
                 {
                   "key": "review_id",
@@ -916,8 +1188,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/reviews/goals/?employee_id=1&status=IN_PROGRESS",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", "goals", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "goals",
+                ""
+              ],
               "query": [
                 {
                   "key": "employee_id",
@@ -933,7 +1212,8 @@
             },
             "description": "List goals with optional filters"
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR/ADMIN view all, MANAGER view team, EMPLOYEE view own, AUDITOR read-only."
         },
         {
           "name": "Create Goal",
@@ -951,8 +1231,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/reviews/goals/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", "goals", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "goals",
+                ""
+              ]
             },
             "description": "Create a new goal"
           },
@@ -974,8 +1261,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/reviews/goals/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "reviews", "goals", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "goals",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1000,8 +1295,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/wellbeing/surveys/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "surveys", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "surveys",
+                ""
+              ]
             },
             "description": "Get list of all wellbeing surveys"
           },
@@ -1023,8 +1325,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/wellbeing/surveys/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "surveys", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "surveys",
+                ""
+              ]
             },
             "description": "Create wellbeing survey. Requires HR/Admin."
           },
@@ -1037,8 +1346,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/wellbeing/surveys/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "surveys", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "surveys",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1051,14 +1368,23 @@
           "response": []
         },
         {
-          "name": "Get Survey Statistics (HR/Admin)",
+          "name": "Get Survey Statistics (HR/Admin/Auditor)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/wellbeing/surveys/:id/stats/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "surveys", ":id", "stats", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "surveys",
+                ":id",
+                "stats",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1068,7 +1394,8 @@
             },
             "description": "Get aggregated survey statistics. Requires HR/Admin."
           },
-          "response": []
+          "response": [],
+          "description": "Access: HR, ADMIN, or AUDITOR (read-only)."
         },
         {
           "name": "List Survey Responses",
@@ -1077,8 +1404,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/wellbeing/responses/?survey_id=1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "responses", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "responses",
+                ""
+              ],
               "query": [
                 {
                   "key": "survey_id",
@@ -1113,8 +1447,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/wellbeing/responses/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "responses", ""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "responses",
+                ""
+              ]
             },
             "description": "Submit a survey response"
           },
@@ -1127,8 +1468,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/wellbeing/responses/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "responses", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "responses",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1156,8 +1505,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/wellbeing/responses/:id/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "wellbeing", "responses", ":id", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "wellbeing",
+                "responses",
+                ":id",
+                ""
+              ],
               "variable": [
                 {
                   "key": "id",
