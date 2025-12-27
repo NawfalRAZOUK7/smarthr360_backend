@@ -39,6 +39,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - `auth`: enveloppe standard `{"data": ..., "meta": {"success": true}}` via `ApiResponseMixin`.
 - `prediction_skills`: réponses brutes DRF.
 - Décision: adopter l’enveloppe standard pour tous les endpoints (auth et métier) ou documenter une exception. Mettre à jour les clients/tests si enveloppe généralisée.
+- Statut (auth): docs alignées sur l’enveloppe `data/meta` (success + pagination), erreurs DRF non enveloppées.
 
 ## 7) Étapes techniques proposées
 1) Activer/porter django-axes dans `auth` (settings, middleware, config lock sur email). Garder `LoginActivity`.

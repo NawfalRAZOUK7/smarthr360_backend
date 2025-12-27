@@ -354,6 +354,15 @@ smarthr360_backend/
 
 SmartHR360 uses JWT (JSON Web Tokens) for authentication.
 
+All successful responses use a standard envelope:
+
+```json
+{
+  "data": { ... },
+  "meta": { "success": true }
+}
+```
+
 ### Registration
 
 ```http
@@ -373,16 +382,21 @@ Content-Type: application/json
 
 ```json
 {
-  "user": {
-    "id": 1,
-    "email": "john.doe@company.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "role": "EMPLOYEE"
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "john.doe@company.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "role": "EMPLOYEE"
+    },
+    "tokens": {
+      "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+      "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    }
   },
-  "tokens": {
-    "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  "meta": {
+    "success": true
   }
 }
 ```

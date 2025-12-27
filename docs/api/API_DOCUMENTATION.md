@@ -2,7 +2,7 @@
 
 **Complete API Reference Guide**
 
-Last Updated: November 26, 2025
+Last Updated: December 27, 2025
 
 ---
 
@@ -20,18 +20,18 @@ Last Updated: November 26, 2025
 
 ## Overview
 
-SmartHR360 is a comprehensive HR management system built with Django REST Framework. The API follows RESTful conventions and returns responses in JSON format with a standardized envelope structure:
+SmartHR360 is a comprehensive HR management system built with Django REST Framework. The API follows RESTful conventions and returns successful responses in JSON format with a standardized envelope structure:
 
 ```json
 {
   "data": { ... },
   "meta": {
-    "timestamp": "2025-11-26T10:30:00Z",
-    "path": "/api/endpoint/",
-    "request_id": "unique-id"
+    "success": true
   }
 }
 ```
+
+For paginated list endpoints, the `data` payload includes `count`, `next`, `previous`, and `results`, and `meta` includes `page` and `page_size`.
 
 **Base URL**: `http://localhost:8000/` (development)
 
@@ -1311,29 +1311,24 @@ The API provides interactive documentation through multiple interfaces:
     "name": "Example"
   },
   "meta": {
-    "timestamp": "2025-11-26T10:30:00Z",
-    "path": "/api/endpoint/",
-    "request_id": "abc-123"
+    "success": true
   }
 }
 ```
 
 ### Error Response
 
+Error responses use standard DRF shapes (not wrapped):
+
 ```json
 {
-  "error": {
-    "code": "validation_error",
-    "message": "Invalid input data",
-    "details": {
-      "field_name": ["Error message"]
-    }
-  },
-  "meta": {
-    "timestamp": "2025-11-26T10:30:00Z",
-    "path": "/api/endpoint/",
-    "request_id": "abc-123"
-  }
+  "detail": "Invalid credentials."
+}
+```
+
+```json
+{
+  "field_name": ["Error message"]
 }
 ```
 
@@ -1347,7 +1342,11 @@ The API provides interactive documentation through multiple interfaces:
     "previous": null,
     "results": [ ... ]
   },
-  "meta": { ... }
+  "meta": {
+    "success": true,
+    "page": 1,
+    "page_size": 20
+  }
 }
 ```
 
