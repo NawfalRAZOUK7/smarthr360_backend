@@ -74,6 +74,32 @@ class AuthFlowTests(APITestCase):
 
         return access, refresh
 
+    def login_with_username(self, username, password):
+        response = self.client.post(
+            self.login_url,
+            {"username": username, "password": password},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        envelope = response.data
+        data = envelope.get("data", envelope)
+
+        tokens = data.get("tokens") or {}
+        access = tokens.get("access")
+        refresh = tokens.get("refresh")
+
+        self.assertIsNotNone(
+            access,
+            f"No access token in login response: {response.data}",
+        )
+        self.assertIsNotNone(
+            refresh,
+            f"No refresh token in login response: {response.data}",
+        )
+
+        return access, refresh
+
     # ---------- Tests ----------
 
     def test_register_employee_success(self):
@@ -95,10 +121,45 @@ class AuthFlowTests(APITestCase):
         user = data["user"]
         self.assertEqual(user["email"], payload["email"])
         self.assertEqual(user["role"], "EMPLOYEE")
+        self.assertEqual(user["username"], payload["email"])
         self.assertIn("tokens", data)
+
+    def test_register_with_username_sets_username(self):
+        payload = {
+            "email": "userwithname@example.com",
+            "username": "userwithname",
+            "first_name": "User",
+            "last_name": "WithName",
+            "password": "UserName123!",
+            "role": "EMPLOYEE",
+        }
+        response = self.client.post(self.register_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        envelope = response.data
+        data = envelope.get("data", envelope)
+        user = data["user"]
+        self.assertEqual(user["email"], payload["email"])
+        self.assertEqual(user["username"], payload["username"])
 
     def test_login_returns_tokens(self):
         access, refresh = self.login("emp@example.com", "EmpPass123!")
+        self.assertTrue(isinstance(access, str) and len(access) > 10)
+        self.assertTrue(isinstance(refresh, str) and len(refresh) > 10)
+
+    def test_login_with_username_returns_tokens(self):
+        payload = {
+            "email": "username_login@example.com",
+            "username": "username_login",
+            "first_name": "User",
+            "last_name": "Name",
+            "password": "UserName123!",
+            "role": "EMPLOYEE",
+        }
+        response = self.client.post(self.register_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        access, refresh = self.login_with_username("username_login", "UserName123!")
         self.assertTrue(isinstance(access, str) and len(access) > 10)
         self.assertTrue(isinstance(refresh, str) and len(refresh) > 10)
 

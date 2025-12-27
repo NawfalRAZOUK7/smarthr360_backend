@@ -25,7 +25,7 @@ class UserAdmin(BaseUserAdmin):
     )
     list_filter = ("role", "is_active", "is_email_verified", "is_staff", "is_superuser")
     search_fields = ("email", "username", "first_name", "last_name")
-    readonly_fields = ("username", "email_verified_at")
+    readonly_fields = ("email_verified_at",)
 
     fieldsets = (
         (None, {"fields": ("email", "username", "password")}),
@@ -52,6 +52,7 @@ class UserAdmin(BaseUserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "email",
+                    "username",
                     "password1",
                     "password2",
                     "role",

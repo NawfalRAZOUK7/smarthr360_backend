@@ -21,8 +21,8 @@ from .serializers import (
 register_schema = extend_schema(
     summary="Register a new user",
     description=(
-        "Create a new user account. Returns user data and JWT tokens upon successful "
-        "registration."
+        "Create a new user account. Accepts email (required) and an optional username. "
+        "Returns user data and JWT tokens upon successful registration."
     ),
     request=RegisterSerializer,
     responses={
@@ -38,6 +38,7 @@ register_schema = extend_schema(
             "Register Example",
             value={
                 "email": "john.doe@company.com",
+                "username": "john.doe",
                 "password": "SecurePass123!",
                 "first_name": "John",
                 "last_name": "Doe",
@@ -52,7 +53,8 @@ register_schema = extend_schema(
 login_schema = extend_schema(
     summary="User login",
     description=(
-        "Authenticate user and receive JWT tokens. Returns user data and access/refresh tokens."
+        "Authenticate user by email or username and receive JWT tokens. "
+        "Returns user data and access/refresh tokens."
     ),
     request=LoginSerializer,
     responses={
@@ -69,6 +71,14 @@ login_schema = extend_schema(
             "Login Example",
             value={
                 "email": "john.doe@company.com",
+                "password": "SecurePass123!"
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Login with Username",
+            value={
+                "username": "john.doe",
                 "password": "SecurePass123!"
             },
             request_only=True,

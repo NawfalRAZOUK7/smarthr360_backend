@@ -143,7 +143,7 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.email:
             self.email = normalize_email_address(self.email)
-        if self.email:
+        if self.email and not self.username:
             self.username = self.email
         if self.is_email_verified and not self.email_verified_at:
             self.email_verified_at = timezone.now()

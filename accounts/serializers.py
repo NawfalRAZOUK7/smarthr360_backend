@@ -34,10 +34,11 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     """Used for /register endpoint."""
     password = serializers.CharField(write_only=True, min_length=8)
+    username = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "password", "role"]
+        fields = ["email", "username", "first_name", "last_name", "password", "role"]
 
     def create(self, validated_data):
         role = validated_data.pop("role", User.Role.EMPLOYEE)
@@ -77,10 +78,21 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Un utilisateur avec cet email existe déjà.")
         return normalized_email
 
+    def validate_username(self, value):
+        if value is None:
+            return value
+        username = value.strip()
+        if not username:
+            return ""
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError("Un utilisateur avec ce username existe déjà.")
+        return username
+
 
 class LoginSerializer(serializers.Serializer):
     """Used for /login endpoint."""
-    email = serializers.EmailField()
+    email = serializers.CharField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def _get_request_meta(self):
@@ -92,13 +104,27 @@ class LoginSerializer(serializers.Serializer):
         return ip, ua
 
     def validate(self, attrs):
-        email = normalize_email_address(attrs.get("email"))
+        raw_email = (attrs.get("email") or "").strip()
+        raw_username = (attrs.get("username") or "").strip()
         password = attrs.get("password")
         ip, ua = self._get_request_meta()
 
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
+        if not raw_email and not raw_username:
+            raise serializers.ValidationError("Email ou username requis.")
+
+        user = None
+
+        if raw_email:
+            if "@" in raw_email:
+                normalized_email = normalize_email_address(raw_email)
+                user = User.objects.filter(email__iexact=normalized_email).first()
+            else:
+                user = User.objects.filter(username__iexact=raw_email).first()
+
+        if not user and raw_username:
+            user = User.objects.filter(username__iexact=raw_username).first()
+
+        if not user:
             # optional: we don't log here since we don't have a user FK
             raise serializers.ValidationError("Identifiants invalides.") from None
 
