@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',  # OpenAPI documentation
     'corsheaders',  # CORS headers
+    'axes',  # Login attempt tracking
 
     # Local apps
     'accounts',
@@ -47,6 +48,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',  # Login protection - after AuthenticationMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'smarthr360_backend.middleware.AdminIPWhitelistMiddleware',  # Admin IP restriction
@@ -70,6 +72,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'smarthr360_backend.wsgi.application'
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Database
 DATABASES = {
@@ -183,6 +190,18 @@ SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# Login lockout configuration (aligned with django-axes)
+LOGIN_MAX_ATTEMPTS = config('LOGIN_MAX_ATTEMPTS', default=5, cast=int)
+LOGIN_LOCKOUT_MINUTES = config('LOGIN_LOCKOUT_MINUTES', default=30, cast=int)
+
+# Django Axes configuration (login protection)
+AXES_ENABLED = config('AXES_ENABLED', default=True, cast=bool)
+AXES_FAILURE_LIMIT = LOGIN_MAX_ATTEMPTS
+AXES_COOLOFF_TIME = timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+AXES_LOCK_OUT_PARAMETERS = ["username", "ip_address"]
+AXES_USERNAME_FORM_FIELD = "email"
+AXES_RESET_ON_SUCCESS = True
 
 # Admin panel security
 ADMIN_ENABLED = config('ADMIN_ENABLED', default=True, cast=bool)

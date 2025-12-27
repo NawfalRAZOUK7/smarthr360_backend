@@ -246,8 +246,8 @@ class LoginAttempt(models.Model):
     is_locked = models.BooleanField(default=False)
     locked_until = models.DateTimeField(null=True, blank=True)
 
-    MAX_ATTEMPTS = 5               # after 5 failed logins → lock account
-    LOCKOUT_MINUTES = 15           # locked for 15 minutes
+    MAX_ATTEMPTS = getattr(settings, "LOGIN_MAX_ATTEMPTS", 5)
+    LOCKOUT_MINUTES = getattr(settings, "LOGIN_LOCKOUT_MINUTES", 30)
 
     def mark_failed(self):
         from django.utils import timezone

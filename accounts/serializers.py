@@ -1,6 +1,8 @@
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.utils import timezone
+from axes.exceptions import AxesBackendPermissionDenied
 from rest_framework import exceptions, serializers
 
 # + the new import we just added:
@@ -159,8 +161,27 @@ class LoginSerializer(serializers.Serializer):
                 f"Compte verrouillé. Réessayez dans {minutes_left} minutes."
             )
 
-        # 2) Check password
-        if not user.check_password(password):
+        # 2) Check password (use authenticate for axes integration)
+        try:
+            authenticated_user = authenticate(
+                request=self.context.get("request"),
+                email=user.email,
+                password=password,
+            )
+        except AxesBackendPermissionDenied:
+            LoginActivity.objects.create(
+                user=user,
+                action=LoginActivity.Action.LOGIN,
+                success=False,
+                ip_address=ip,
+                user_agent=ua,
+                extra_data={"reason": "axes_locked"},
+            )
+            raise serializers.ValidationError(
+                "Compte verrouillé. Réessayez plus tard."
+            )
+
+        if not authenticated_user:
             # before increment, were we unlocked?
             was_locked_before = attempt.is_locked
 
@@ -220,7 +241,7 @@ class LoginSerializer(serializers.Serializer):
             extra_data=None,
         )
 
-        attrs["user"] = user
+        attrs["user"] = authenticated_user
         return attrs
 
 

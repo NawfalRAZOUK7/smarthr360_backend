@@ -18,6 +18,7 @@ drf-spectacular>=0.27,<1.0
 
 # Security & Production
 django-cors-headers>=4.3,<5.0
+django-axes>=8.0,<9.0
 python-decouple>=3.8,<4.0
 dj-database-url>=2.1,<3.0
 
@@ -31,4 +32,3 @@ psycopg2-binary>=2.9,<3.0
 # Optional: Cloud Storage (uncomment if using S3/Backblaze)
 # boto3>=1.34,<2.0
 # django-storages>=1.14,<2.0
-

@@ -28,6 +28,7 @@ Objectif: documenter les changements à mener pour aligner l’authentification 
 - `auth`: `LoginAttempt` (lock après N échecs), email d’alerte, `LoginActivity` (audit).
 - `prediction_skills`: django-axes (lock username/IP, configurable), middleware de sécurité/logging.
 - Recommandation: activer django-axes dans `auth` (middleware + settings) pour bénéficier du lock IP/user robuste, tout en gardant `LoginActivity` pour l’audit. Harmoniser les paramètres de lock (seuils, durée). Si login email-only, basculer Axes sur le champ email.
+- Statut (auth): django-axes activé (apps/middleware/backends) + seuils alignés sur `LOGIN_MAX_ATTEMPTS`/`LOGIN_LOCKOUT_MINUTES` (par défaut 5 / 30 min). Login garde `LoginAttempt` + audit.
 
 ## 5) JWT / sessions
 - Les deux projets utilisent SimpleJWT; différence: login username (prediction_skills) vs email (auth).
